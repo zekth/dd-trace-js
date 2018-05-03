@@ -43,13 +43,13 @@ module.exports = {
             options
         );
 
-        options.headers['Content-Type'] = 'application/json';
-
         return new Promise((resolve, reject) => {
             const xhr = new global.XMLHttpRequest();
+            const paramsString = options.params === undefined ? '' :
+                `?${Object.entries(options.params).map(([k, v]) => `${k}=${v}`).join('&')}`
             const url = `${options.protocol}//${options.hostname}:${
                 options.port
-            }${options.path}`;
+            }${options.path}${paramsString}`;
 
             xhr.onload = function() {
                 if (this.status >= 200 && this.status <= 299) {

@@ -18,7 +18,7 @@ class DatadogTracer extends Tracer {
 
     this._service = config.service
     this._url = config.url
-    this._recorder = new Recorder(config.url, config.flushInterval, config.bufferSize)
+    this._recorder = new Recorder(config.url, config.flushInterval, config.bufferSize, config.params)
     this._recorder.init()
     this._sampler = new Sampler(1)
     this._propagators = {
