@@ -1,7 +1,7 @@
-'use strict';
+'use strict'
 
-function service(key) {
-    return this._service;
+function service (key) {
+  return this._service
 }
 
-module.exports = service;
+module.exports = service

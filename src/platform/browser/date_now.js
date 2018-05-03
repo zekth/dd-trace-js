@@ -1,7 +1,7 @@
-'use strict';
+'use strict'
 
 if (Date.now) {
-    module.exports = () => Date.now();
+  module.exports = () => Date.now()
 } else {
-    module.exports = () => new Date().getTime();
+  module.exports = () => new Date().getTime()
 }

@@ -1,3 +1,3 @@
-'use strict';
+'use strict'
 
-module.exports = name => process.env[name];
+module.exports = name => process.env[name]
