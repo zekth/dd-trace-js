@@ -49,7 +49,7 @@ class Writer {
           port: this._url.port,
           path: this._url.pathname,
           params: this._params,
-          method: 'PUT',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/msgpack',
             'Datadog-Meta-Lang': platform.name(),
