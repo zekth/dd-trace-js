@@ -18,13 +18,14 @@ class DatadogTracer extends Tracer {
 
     this._context.run(() => {
       const childOf = options.childOf || this._context.get('current')
+      const startTime = options.startTime
       const tags = Object.assign({
         'service.name': options.service || this._service,
         'resource.name': options.resource || name,
         'span.type': options.type
       }, options.tags)
 
-      const span = this.startSpan(name, { childOf, tags })
+      const span = this.startSpan(name, { childOf, startTime, tags })
       this._context.set('current', span)
 
       callback(span)
