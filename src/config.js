@@ -13,12 +13,13 @@ class Config {
     const protocol = 'http'
     const hostname = coalesce(options.hostname, platform.env('DD_TRACE_AGENT_HOSTNAME'), 'localhost')
     const port = coalesce(options.port, platform.env('DD_TRACE_AGENT_PORT'), 8126)
+    const url = coalesce(new URL(options.url), new URL(`${protocol}://${hostname}:${port}`))
 
     this.enabled = String(enabled) === 'true'
     this.debug = String(debug) === 'true'
     this.service = coalesce(options.service, platform.env('DD_SERVICE_NAME'), platform.service())
     this.env = coalesce(options.env, platform.env('DD_ENV'))
-    this.url = new URL(`${protocol}://${hostname}:${port}`)
+    this.url = url;
     this.tags = coalesce(options.tags, {})
     this.flushInterval = coalesce(options.flushInterval, 2000)
     this.bufferSize = 100000
