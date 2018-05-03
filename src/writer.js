@@ -46,7 +46,7 @@ class Writer {
                     protocol: this._url.protocol,
                     hostname: this._url.hostname,
                     port: this._url.port,
-                    path: '/v0.3/traces',
+                    path: this._url.pathname,
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/msgpack',
