@@ -5,6 +5,7 @@ const load = require('./load')
 const context = require('./context')
 const msgpack = require('./msgpack')
 const service = require('./service')
+const instrumenter = require('./instrumenter')
 const dateNow = require('./date_now')
 const crypto = require('./crypto')
 const now = require('performance-now')
@@ -23,6 +24,7 @@ module.exports = {
   context,
   msgpack,
   service,
+  instrumenter,
 
   now () {
     return Math.round((loadMs + now() - loadNs) * 100000) / 100000
