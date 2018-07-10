@@ -106,6 +106,21 @@ describe('Plugin', () => {
             }
           }
         }
+      }),
+
+      mutation: new graphql.GraphQLObjectType({
+        name: 'RootMutationType',
+        fields: {
+          hello: {
+            type: graphql.GraphQLString,
+            args: {
+              name: {
+                type: graphql.GraphQLString
+              }
+            },
+            resolve (obj, args) {}
+          }
+        }
       })
     })
   }
@@ -322,6 +337,37 @@ describe('Plugin', () => {
           .catch(done)
 
         graphql.graphql(schema, source).catch(done)
+      })
+
+      it('should support mutations after queries', () => {
+        const querySource = `
+          {
+            human {
+              name
+              address {
+                civicNumber
+                street
+              }
+            }
+          }
+        `
+
+        const mutationSource = `
+          {
+            human {
+              name
+              address {
+                civicNumber
+                street
+              }
+            }
+          }
+        `
+
+        return graphql.graphql(schema, querySource)
+          .then(() => {
+            return graphql.graphql(schema, mutationSource, {})
+          })
       })
 
       it('should handle a circular schema', done => {
