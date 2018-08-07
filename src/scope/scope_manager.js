@@ -5,6 +5,11 @@ const Scope = require('./scope')
 const Context = require('./context')
 const ContextExecution = require('./context_execution')
 
+const LEAKING_TYPES = new Set([
+  'TCPWRAP',
+  'HTTPPARSER'
+])
+
 let singleton = null
 
 /**
@@ -75,8 +80,8 @@ class ScopeManager {
     return scope
   }
 
-  _init (asyncId) {
-    const context = new Context()
+  _init (asyncId, type) {
+    const context = new Context(type)
 
     context.link(this._active)
     context.retain()
@@ -107,6 +112,13 @@ class ScopeManager {
 
       this._active = this._stack.pop()
       this._executions.delete(asyncId)
+    }
+
+    const context = this._contexts.get(asyncId)
+
+    // HACK: workaround for https://github.com/nodejs/node/issues/19859
+    if (context && LEAKING_TYPES.has(context.type())) {
+      this._destroy(asyncId)
     }
   }
 

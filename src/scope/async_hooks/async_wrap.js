@@ -10,11 +10,18 @@ try {
   asyncHook = require('async-hook-jl')
 }
 
+const providers = process.binding('async_wrap').Providers
+const types = {}
+
+for (const key in providers) {
+  types[providers[key]] = key
+}
+
 module.exports = {
   createHook: (callbacks) => {
     const hooks = {
       init: (uid, handle, provider, parentUid, parentHandle) => {
-        callbacks.init(uid)
+        callbacks.init(uid, types[provider])
       },
       pre: (uid, handle) => {
         callbacks.before(uid)

@@ -1,9 +1,10 @@
 'use strict'
 
 class Context {
-  constructor () {
+  constructor (type) {
     this._parent = null
     this._count = 0
+    this._type = type
   }
 
   retain () {
@@ -16,6 +17,10 @@ class Context {
     if (this._count === 0) {
       this._destroy()
     }
+  }
+
+  type () {
+    return this._type
   }
 
   parent () {
