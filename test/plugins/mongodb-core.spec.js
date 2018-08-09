@@ -297,5 +297,58 @@ describe('Plugin', () => {
         server.insert(`test.${collection}`, [{ a: 1 }], () => {})
       })
     })
+
+    describe('when used with mongoose', () => {
+      let mongoose
+      let connection
+
+      beforeEach(done => {
+        agent.load(plugin, 'mongodb-core')
+          .then(() => {
+            mongoose = require('mongoose')
+
+            connection = mongoose.createConnection('mongodb://localhost:27017/db', {
+              useNewUrlParser: true
+            })
+            connection.on('connected', () => done())
+            connection.on('error', done)
+          })
+          .catch(done)
+      })
+
+      afterEach(done => {
+        connection.close(() => {
+          agent.wipe('mongoose')
+          agent.wipe('mongodb')
+
+          done()
+        })
+      })
+
+      it('should do automatic instrumentation', done => {
+        const blogSchema = new mongoose.Schema({
+          title: String
+        })
+
+        const Blog = connection.model('Blog', blogSchema)
+
+        agent
+          .use(traces => {
+            const span = traces[0][0]
+            const resource = `find db.blogs {}`
+
+            expect(span).to.have.property('name', 'mongodb.query')
+            expect(span).to.have.property('service', 'test-mongodb')
+            expect(span).to.have.property('resource', resource)
+            expect(span).to.have.property('type', 'mongodb')
+            expect(span.meta).to.have.property('db.name', `db.blogs`)
+            expect(span.meta).to.have.property('out.host', 'localhost')
+          })
+          .then(done)
+          .catch(done)
+
+        Blog.findOne(() => {})
+      })
+    })
   })
 })
