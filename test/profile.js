@@ -18,28 +18,39 @@ function profile (t, operation, iterations, concurrency) {
 
   process.on('warning', handleWarning)
 
-  const promises = []
   const hd = new memwatch.HeapDiff()
 
-  for (let i = 0; i < concurrency; i++) {
-    const promise = new Promise((resolve, reject) => {
-      start(0)
+  let count = 0
+  let total = 0
 
-      function start (count) {
-        if (count === iterations || error) {
-          return resolve()
-        }
+  function schedule () {
+    return new Promise((resolve, reject) => {
+      start()
 
-        operation(() => {
-          setImmediate(() => start(count + 1))
+      function start () {
+        setTimeout(() => {
+          if (count === 0 && total === iterations * concurrency) {
+            return resolve()
+          }
+
+          for (let i = count; i < concurrency; i++) {
+            if (total === iterations * concurrency) {
+              break
+            }
+
+            total++
+            count++
+
+            operation(() => count--)
+          }
+
+          start()
         })
       }
     })
-
-    promises.push(promise)
   }
 
-  return Promise.all(promises)
+  return schedule()
     .then(() => {
       if (error) {
         log(t, error.stack)
