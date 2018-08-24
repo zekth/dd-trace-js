@@ -29,51 +29,76 @@ const ScopeManager = proxyquire('../src/scope/scope_manager', {
 const scopeManager = new ScopeManager()
 
 suite
-  .add('ScopeManager (sync)', {
-    fn () {
-      const scope = scopeManager.activate(spanStub)
+  // .add('ScopeManager (sync)', {
+  //   fn () {
+  //     const scope = scopeManager.activate(spanStub)
 
-      scope.close()
-    }
-  })
-  .add('ScopeManager (async)', {
+  //     scope.close()
+  //   }
+  // })
+  // .add('ScopeManager (async)', {
+  //   fn () {
+  //     asyncHooks.init(1)
+  //     asyncHooks.before(1)
+
+  //     const scope = scopeManager.activate(spanStub)
+
+  //     scope.close()
+
+  //     asyncHooks.after(1)
+  //     asyncHooks.destroy(1)
+  //   }
+  // })
+  // .add('ScopeManager (nested)', {
+  //   fn () {
+  //     let id = 1
+
+  //     asyncHooks.init(id)
+  //     asyncHooks.before(id)
+
+  //     while (id < 10) {
+  //       const scope = scopeManager.activate(spanStub)
+
+  //       asyncHooks.init(id + 1)
+  //       scope.close()
+  //       asyncHooks.after(id)
+  //       asyncHooks.destroy(id)
+  //       asyncHooks.before(id + 1)
+
+  //       id++
+  //     }
+
+  //     asyncHooks.after(id)
+  //     asyncHooks.destroy(id)
+  //   }
+  // })
+  .add('ScopeManager (no scope)', {
     fn () {
       asyncHooks.init(1)
       asyncHooks.before(1)
-
-      const scope = scopeManager.activate(spanStub)
-
-      scope.close()
-
       asyncHooks.after(1)
       asyncHooks.destroy(1)
     }
   })
-  .add('ScopeManager (nested)', {
+  .add('ScopeManager (no scope nested)', {
     fn () {
-      asyncHooks.init(1)
-      asyncHooks.before(1)
+      let id = 1
 
-      const scope1 = scopeManager.activate(spanStub)
+      scopeManager.activate({})
+      asyncHooks.init(id)
+      asyncHooks.before(id)
 
-      asyncHooks.init(2)
-      asyncHooks.after(1)
-      asyncHooks.destroy(1)
-      asyncHooks.before(2)
+      while (id < 100) {
+        asyncHooks.init(id + 1)
+        asyncHooks.after(id)
+        asyncHooks.destroy(id)
+        asyncHooks.before(id + 1)
 
-      scope1.close()
+        id++
+      }
 
-      const scope2 = scopeManager.activate(spanStub)
-
-      asyncHooks.init(3)
-      asyncHooks.after(2)
-      asyncHooks.destroy(2)
-      asyncHooks.before(3)
-
-      scope2.close()
-
-      asyncHooks.after(3)
-      asyncHooks.destroy(3)
+      asyncHooks.after(id)
+      asyncHooks.destroy(id)
     }
   })
 
