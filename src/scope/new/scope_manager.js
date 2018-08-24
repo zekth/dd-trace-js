@@ -20,10 +20,12 @@ class ScopeManager {
 
     singleton = this
 
+    this._stack = []
     this._link = null
     this._contexts = new Map()
     this._links = new Map()
     this._ns = new Namespace()
+    this._scopes = new Map()
 
     this._hook = asyncHooks.createHook({
       init: this._init.bind(this),
@@ -44,8 +46,8 @@ class ScopeManager {
    * @returns {Scope} The active scope.
    */
   active () {
-    // const context = this._ns.active()
-    return null
+    const context = this._ns.active()
+    return context ? context.scope : null
   }
 
   /**
@@ -58,24 +60,35 @@ class ScopeManager {
   activate (span, finishSpanOnClose) {
     const context = this._ns.create()
 
-    context.scope = new Scope(span, this._ns, context, this._link, finishSpanOnClose)
+    let scopes = this._scopes.get(this._currentId)
 
-    this._ns.enter(context)
+    if (!scopes) {
+      scopes = new Set()
+      this._scopes.set(this._currentId, scopes)
+    }
+
+    context.scope = new Scope(span, this._ns, context, this._active, finishSpanOnClose)
+    context.parent = this._active
+
+    scopes.add(context.scope)
 
     return context.scope
   }
 
   _init (asyncId) {
-    // const link = new Link(this._link)
+    // if (this._link) {
+    //   this._link.retain()
+    // }
 
     // link.retain()
 
     // this._links.set(asyncId, link)
 
-    const active = this._ns.active()
+    const context = this._ns.active()
 
-    if (active) {
-      this._contexts.set(asyncId, this._ns.active())
+    if (context) {
+      context.scope._retain()
+      this._contexts.set(asyncId, context)
     }
   }
 
@@ -86,6 +99,9 @@ class ScopeManager {
       this._ns.enter(context)
     }
 
+    this._currentId = asyncId
+    this._stack.push(asyncId)
+
     // this._link = this._links.get(asyncId)
   }
 
@@ -94,10 +110,17 @@ class ScopeManager {
 
     if (context) {
       this._ns.exit(context)
+      // context.scope.close()
+
+      // while (context.) {
+
+      // }
     }
 
+    this._currentId = this._stack.pop()
+
     // if (this._link) {
-    //   this._link.close()
+    //   // this._link.close()
     //   this._link = this._link.parent()
     // }
   }
@@ -109,7 +132,23 @@ class ScopeManager {
     //   link.release()
     // }
 
-    this._contexts.delete(asyncId)
+    const context = this._contexts.get(asyncId)
+
+    if (context) {
+      context.scope._release()
+      this._contexts.delete(asyncId)
+    }
+
+    const scopes = this._scopes.get(asyncId)
+
+    if (scopes) {
+      for (const scope of scopes) {
+        scope.close()
+      }
+
+      this._scopes.delete(asyncId)
+    }
+
     // this._links.delete(asyncId)
   }
 

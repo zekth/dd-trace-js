@@ -6,15 +6,18 @@
  * @hideconstructor
  */
 class Scope {
-  constructor (span, ns, context, link, finishSpanOnClose) {
+  constructor (span, ns, context, parent, finishSpanOnClose) {
     this._span = span
     this._ns = ns
     this._context = context
-    this._link = link
+    this._parent = parent
     this._finishSpanOnClose = !!finishSpanOnClose
+    this._count = 0
 
-    if (this._link) {
-      this._link.add(this)
+    ns.enter(context)
+
+    if (this._parent) {
+      this._parent._retain()
     }
   }
 
@@ -31,16 +34,29 @@ class Scope {
    * Close the scope, and finish the span if the scope was created with `finishSpanOnClose` set to true.
    */
   close () {
-    if (this._link) {
-      if (this._finishSpanOnClose) {
-        // this._link.hold(this._span)
-      }
+    if (this._closed) return
 
-      // this._link.remove(this)
+    if (this._count === 0) {
+      this._finish()
+      this._context.parent && this._context.parent._release()
+      this._context.parent = null
     }
 
-    if (this._context) {
-      this._ns.exit(this._context)
+    this._ns.exit(this._context)
+  }
+
+  _retain () {
+    this._count++
+  }
+
+  _release () {
+    this._count--
+    this.close()
+  }
+
+  _finish () {
+    if (this._finishSpanOnClose) {
+      this._span.finish()
     }
   }
 }

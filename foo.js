@@ -2,9 +2,31 @@
 
 const spanStub = require('./benchmark/stubs/span')
 
-// const ScopeManager = require('./src/scope/scope_manager')
+const ScopeManager = require('./src/scope/new/scope_manager')
 
-// const scopeManager = new ScopeManager()
+const scopeManager = new ScopeManager()
+
+// const cls = require('continuation-local-storage')
+// cls.createNamespace('dd-trace')
+
+// const asyncHooks = require('async_hooks')
+
+// asyncHooks.createHook({
+//   init () {},
+//   before () {},
+//   after () {},
+//   destroy () {},
+//   promiseResolve () {}
+// }).enable()
+
+// require('async-listener')
+
+// process.addAsyncListener({
+//   create: function () { return null },
+//   before: function (context, storage) { },
+//   after: function (context, storage) { },
+//   error: function (storage) { }
+// })
 
 benchPromise()
 
@@ -48,9 +70,9 @@ function benchPromise () {
   function recurse (count) {
     if (count < 1000) {
       Promise.resolve().then(() => {
-        // if (count % 10 === 0) {
-        //   scopeManager.activate({})
-        // }
+        if (count % 10 === 0) {
+          scopeManager.activate({})
+        }
 
         recurse(count + 1)
       })
