@@ -57,7 +57,6 @@ class ScopeManager {
    */
   activate (span, finishSpanOnClose) {
     const context = this._ns.create()
-    // const context = Object.prototype
 
     context.scope = new Scope(span, this._ns, context, this._link, finishSpanOnClose)
 
