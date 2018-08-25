@@ -6,11 +6,11 @@
  * @hideconstructor
  */
 class Scope {
-  constructor (span, ns, context, parent, finishSpanOnClose) {
+  constructor (span, ns, context, finishSpanOnClose) {
     this._span = span
     this._ns = ns
     this._context = context
-    this._parent = parent
+    this._parent = this._context.prototype ? this._context.prototype.scope : null
     this._finishSpanOnClose = !!finishSpanOnClose
     this._count = 0
 
@@ -38,11 +38,11 @@ class Scope {
 
     if (this._count === 0) {
       this._finish()
-      this._context.parent && this._context.parent._release()
-      this._context.parent = null
+      this._parent && this._parent._release()
+      this._context.scopes.delete(this)
     }
 
-    this._ns.exit(this._context)
+    this._exit()
   }
 
   _retain () {
@@ -52,6 +52,13 @@ class Scope {
   _release () {
     this._count--
     this.close()
+  }
+
+  _exit () {
+    if (this._exited) return
+
+    this._ns.exit(this._context)
+    this._exited = true
   }
 
   _finish () {

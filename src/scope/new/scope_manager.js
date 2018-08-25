@@ -2,7 +2,6 @@
 
 const asyncHooks = require('../async_hooks')
 const Scope = require('./scope')
-const Link = require('./link')
 const Namespace = require('./namespace')
 
 let singleton = null
@@ -67,8 +66,8 @@ class ScopeManager {
       this._scopes.set(this._currentId, scopes)
     }
 
-    context.scope = new Scope(span, this._ns, context, this._active, finishSpanOnClose)
-    context.parent = this._active
+    context.scope = new Scope(span, this._ns, context, finishSpanOnClose)
+    context.scopes = scopes
 
     scopes.add(context.scope)
 
@@ -76,14 +75,6 @@ class ScopeManager {
   }
 
   _init (asyncId) {
-    // if (this._link) {
-    //   this._link.retain()
-    // }
-
-    // link.retain()
-
-    // this._links.set(asyncId, link)
-
     const context = this._ns.active()
 
     if (context) {
@@ -101,8 +92,6 @@ class ScopeManager {
 
     this._currentId = asyncId
     this._stack.push(asyncId)
-
-    // this._link = this._links.get(asyncId)
   }
 
   _after (asyncId) {
@@ -110,34 +99,9 @@ class ScopeManager {
 
     if (context) {
       this._ns.exit(context)
-      // context.scope.close()
-
-      // while (context.) {
-
-      // }
     }
 
     this._currentId = this._stack.pop()
-
-    // if (this._link) {
-    //   // this._link.close()
-    //   this._link = this._link.parent()
-    // }
-  }
-
-  _destroy (asyncId) {
-    // const link = this._links.get(asyncId)
-
-    // if (link) {
-    //   link.release()
-    // }
-
-    const context = this._contexts.get(asyncId)
-
-    if (context) {
-      context.scope._release()
-      this._contexts.delete(asyncId)
-    }
 
     const scopes = this._scopes.get(asyncId)
 
@@ -146,10 +110,19 @@ class ScopeManager {
         scope.close()
       }
 
-      this._scopes.delete(asyncId)
+      this._scopes.clear()
+    }
+  }
+
+  _destroy (asyncId) {
+    const context = this._contexts.get(asyncId)
+
+    if (context) {
+      context.scope._release()
+      this._contexts.delete(asyncId)
     }
 
-    // this._links.delete(asyncId)
+    this._scopes.delete(asyncId)
   }
 
   _enable () {
