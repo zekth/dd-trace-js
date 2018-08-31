@@ -22,20 +22,20 @@ const asyncHooks = {
   }
 }
 
-const ScopeManager = proxyquire('../src/scope/scope_manager', {
-  './async_hooks': asyncHooks
+const ScopeManager = proxyquire('../src/scope/new/scope_manager', {
+  '../async_hooks': asyncHooks
 })
 
 const scopeManager = new ScopeManager()
 
 suite
-  // .add('ScopeManager (sync)', {
-  //   fn () {
-  //     const scope = scopeManager.activate(spanStub)
+  .add('ScopeManager (sync)', {
+    fn () {
+      const scope = scopeManager.activate(spanStub)
 
-  //     scope.close()
-  //   }
-  // })
+      scope.close()
+    }
+  })
   // .add('ScopeManager (async)', {
   //   fn () {
   //     asyncHooks.init(1)
@@ -84,12 +84,59 @@ suite
     fn () {
       let id = 1
 
-      scopeManager.activate({})
       asyncHooks.init(id)
       asyncHooks.before(id)
 
-      while (id < 100) {
+      while (id < 10) {
         asyncHooks.init(id + 1)
+        asyncHooks.after(id)
+        asyncHooks.destroy(id)
+        asyncHooks.before(id + 1)
+
+        id++
+      }
+
+      asyncHooks.after(id)
+      asyncHooks.destroy(id)
+    }
+  })
+  .add('ScopeManager (one scope nested x10)', {
+    fn () {
+      let id = 1
+
+      const scope = scopeManager.activate({})
+      asyncHooks.init(id)
+      scope.close()
+
+      asyncHooks.before(id)
+
+      while (id < 10) {
+        asyncHooks.init(id + 1)
+        asyncHooks.after(id)
+        asyncHooks.destroy(id)
+        asyncHooks.before(id + 1)
+
+        id++
+      }
+
+      asyncHooks.after(id)
+      asyncHooks.destroy(id)
+    }
+  })
+  .add('ScopeManager (nested x10)', {
+    fn () {
+      let id = 1
+
+      const scope = scopeManager.activate({})
+      asyncHooks.init(id)
+      scope.close()
+
+      asyncHooks.before(id)
+
+      while (id < 10) {
+        const scope = scopeManager.activate({})
+        asyncHooks.init(id + 1)
+        scope.close()
         asyncHooks.after(id)
         asyncHooks.destroy(id)
         asyncHooks.before(id + 1)

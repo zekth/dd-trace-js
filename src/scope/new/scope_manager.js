@@ -20,9 +20,7 @@ class ScopeManager {
     singleton = this
 
     this._stack = []
-    this._link = null
     this._contexts = new Map()
-    this._links = new Map()
     this._ns = new Namespace()
     this._scopes = new Map()
 
@@ -59,17 +57,7 @@ class ScopeManager {
   activate (span, finishSpanOnClose) {
     const context = this._ns.create()
 
-    let scopes = this._scopes.get(this._currentId)
-
-    if (!scopes) {
-      scopes = new Set()
-      this._scopes.set(this._currentId, scopes)
-    }
-
     context.scope = new Scope(span, this._ns, context, finishSpanOnClose)
-    context.scopes = scopes
-
-    scopes.add(context.scope)
 
     return context.scope
   }
@@ -78,7 +66,6 @@ class ScopeManager {
     const context = this._ns.active()
 
     if (context) {
-      context.scope._retain()
       this._contexts.set(asyncId, context)
     }
   }
@@ -89,9 +76,6 @@ class ScopeManager {
     if (context) {
       this._ns.enter(context)
     }
-
-    this._currentId = asyncId
-    this._stack.push(asyncId)
   }
 
   _after (asyncId) {
@@ -100,29 +84,10 @@ class ScopeManager {
     if (context) {
       this._ns.exit(context)
     }
-
-    this._currentId = this._stack.pop()
-
-    const scopes = this._scopes.get(asyncId)
-
-    if (scopes) {
-      for (const scope of scopes) {
-        scope.close()
-      }
-
-      this._scopes.clear()
-    }
   }
 
   _destroy (asyncId) {
-    const context = this._contexts.get(asyncId)
-
-    if (context) {
-      context.scope._release()
-      this._contexts.delete(asyncId)
-    }
-
-    this._scopes.delete(asyncId)
+    this._contexts.delete(asyncId)
   }
 
   _enable () {
