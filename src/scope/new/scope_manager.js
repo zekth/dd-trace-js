@@ -23,6 +23,7 @@ class ScopeManager {
     this._contexts = new Map()
     this._ns = new Namespace()
     this._scopes = new Map()
+    this._experimental = true
 
     this._hook = asyncHooks.createHook({
       init: this._init.bind(this),
@@ -56,8 +57,15 @@ class ScopeManager {
    */
   activate (span, finishSpanOnClose) {
     const context = this._ns.create()
+    const scopes = this._scopes.get(this._currentId)
 
     context.scope = new Scope(span, this._ns, context, finishSpanOnClose)
+
+    if (scopes) {
+      scopes.push(context.scope)
+    } else {
+      this._scopes.set(this._currentId, [context.scope])
+    }
 
     return context.scope
   }
@@ -76,6 +84,9 @@ class ScopeManager {
     if (context) {
       this._ns.enter(context)
     }
+
+    this._currentId = asyncId
+    this._stack.push(asyncId)
   }
 
   _after (asyncId) {
@@ -84,10 +95,30 @@ class ScopeManager {
     if (context) {
       this._ns.exit(context)
     }
+
+    if (this._currentId === asyncId) {
+      this._currentId = this._stack.pop()
+    }
+
+    const scopes = this._scopes.get(asyncId)
+
+    if (scopes) {
+      for (let i = 0, l = scopes.length; i < l; i++) {
+        scopes[i].close()
+      }
+
+      this._scopes.clear()
+    }
   }
 
   _destroy (asyncId) {
-    this._contexts.delete(asyncId)
+    const context = this._contexts.get(asyncId)
+
+    if (context) {
+      this._contexts.delete(asyncId)
+    }
+
+    this._scopes.delete(asyncId)
   }
 
   _enable () {

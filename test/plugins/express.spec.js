@@ -360,6 +360,7 @@ describe('Plugin', () => {
           const app = express()
 
           let handler
+          let scope
 
           const interval = setInterval(() => {
             if (handler) {
@@ -367,13 +368,14 @@ describe('Plugin', () => {
 
               clearInterval(interval)
 
-              expect(tracer.scopeManager().active()).to.be.null
+              expect(tracer.scopeManager().active()).to.not.equal(scope)
 
               done()
             }
           })
 
           app.use((req, res, next) => {
+            scope = tracer.scopeManager().active()
             handler = next
           })
 

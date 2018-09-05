@@ -5,6 +5,7 @@ const Tags = opentracing.Tags
 const FORMAT_HTTP_HEADERS = opentracing.FORMAT_HTTP_HEADERS
 const METHODS = require('methods').concat('use', 'route', 'param', 'all')
 const pathToRegExp = require('path-to-regexp')
+const wrapper = require('../wrapper')
 
 const OPERATION_NAME = 'express.request'
 
@@ -56,7 +57,7 @@ function createWrapMethod (tracer, config) {
 
     req._datadog.span = span
 
-    next()
+    wrapper.run(tracer, span, () => next())
   }
 
   return function wrapMethod (original) {
@@ -140,19 +141,31 @@ function wrapNext (tracer, layer, req, next) {
     return next
   }
 
-  const originalNext = next
+  const scopeManager = tracer.scopeManager()
 
-  req._datadog.scope && req._datadog.scope.close()
-  req._datadog.scope = tracer.scopeManager().activate(req._datadog.span)
+  if (scopeManager._experimental) {
+    return function (error) {
+      if (!error && layer.path && !isFastStar(layer)) {
+        req._datadog.paths.pop()
+      }
 
-  return function (error) {
-    if (!error && layer.path && !isFastStar(layer)) {
-      req._datadog.paths.pop()
+      wrapper.run(tracer, req._datadog.span, () => next.apply(this, arguments))
     }
+  } else {
+    const originalNext = next
 
-    process.nextTick(() => {
-      originalNext.apply(null, arguments)
-    })
+    req._datadog.scope && req._datadog.scope.close()
+    req._datadog.scope = scopeManager.activate(req._datadog.span)
+
+    return function (error) {
+      if (!error && layer.path && !isFastStar(layer)) {
+        req._datadog.paths.pop()
+      }
+
+      process.nextTick(() => {
+        originalNext.apply(null, arguments)
+      })
+    }
   }
 }
 

@@ -18,8 +18,8 @@ describe('Plugin', () => {
 
       afterEach(() => {
         connection.close()
-        agent.close()
         agent.wipe()
+        return agent.close()
       })
 
       describe('without configuration', () => {
@@ -188,8 +188,10 @@ describe('Plugin', () => {
               channel.assertQueue('', {}, (err, ok) => {
                 if (err) return done(err)
 
+                const scope = tracer.scopeManager().active()
+
                 channel.consume(ok.queue, () => {}, {}, () => {
-                  expect(tracer.scopeManager().active()).to.be.null
+                  expect(tracer.scopeManager().active()).to.equal(scope)
                   done()
                 })
               })
@@ -219,9 +221,11 @@ describe('Plugin', () => {
           })
 
           it('should run the callback in the parent context', done => {
+            const scope = tracer.scopeManager().active()
+
             channel.assertQueue('test', {})
               .then(() => {
-                expect(tracer.scopeManager().active()).to.be.null
+                expect(tracer.scopeManager().active()).to.equal(scope)
                 done()
               })
               .catch(done)

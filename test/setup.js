@@ -266,6 +266,18 @@ function withVersions (plugin, moduleName, range, cb) {
     .map(v => Object.assign({}, v[1], { version: v[0] }))
     .forEach(v => {
       describe(`with ${moduleName} ${v.range} (${v.version})`, () => cb(v.test))
+
+      describe(`with ${moduleName} ${v.range} (${v.version}) and the new experimental scope manager`, () => {
+        before(() => {
+          process.env.DD_NEW_SCOPE_MANAGER = 'true'
+        })
+
+        after(() => {
+          delete process.env.DD_NEW_SCOPE_MANAGER
+        })
+
+        cb(v.test)
+      })
     })
 }
 

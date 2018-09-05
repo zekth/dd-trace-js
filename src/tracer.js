@@ -1,11 +1,18 @@
 'use strict'
 
 const Tracer = require('./opentracing/tracer')
-const ScopeManager = require('./scope/scope_manager')
 
 class DatadogTracer extends Tracer {
   constructor (config) {
     super(config)
+
+    let ScopeManager
+
+    if (process.env.DD_NEW_SCOPE_MANAGER === 'true') {
+      ScopeManager = require('./scope/new/scope_manager')
+    } else {
+      ScopeManager = require('./scope/scope_manager')
+    }
 
     this._scopeManager = new ScopeManager()
   }

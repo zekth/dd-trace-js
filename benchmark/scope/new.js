@@ -1,11 +1,11 @@
 'use strict'
 
 const proxyquire = require('proxyquire')
-const benchmark = require('./benchmark')
+const benchmark = require('../benchmark')
 
 const suite = benchmark('scope')
 
-const spanStub = require('./stubs/span')
+const spanStub = require('../stubs/span')
 
 const hook = {
   enable () {},
@@ -22,7 +22,7 @@ const asyncHooks = {
   }
 }
 
-const ScopeManager = proxyquire('../src/scope/new/scope_manager', {
+const ScopeManager = proxyquire('../../src/scope/new/scope_manager', {
   '../async_hooks': asyncHooks
 })
 
@@ -36,42 +36,6 @@ suite
       scope.close()
     }
   })
-  // .add('ScopeManager (async)', {
-  //   fn () {
-  //     asyncHooks.init(1)
-  //     asyncHooks.before(1)
-
-  //     const scope = scopeManager.activate(spanStub)
-
-  //     scope.close()
-
-  //     asyncHooks.after(1)
-  //     asyncHooks.destroy(1)
-  //   }
-  // })
-  // .add('ScopeManager (nested)', {
-  //   fn () {
-  //     let id = 1
-
-  //     asyncHooks.init(id)
-  //     asyncHooks.before(id)
-
-  //     while (id < 10) {
-  //       const scope = scopeManager.activate(spanStub)
-
-  //       asyncHooks.init(id + 1)
-  //       scope.close()
-  //       asyncHooks.after(id)
-  //       asyncHooks.destroy(id)
-  //       asyncHooks.before(id + 1)
-
-  //       id++
-  //     }
-
-  //     asyncHooks.after(id)
-  //     asyncHooks.destroy(id)
-  //   }
-  // })
   .add('ScopeManager (no scope)', {
     fn () {
       asyncHooks.init(1)
@@ -80,7 +44,7 @@ suite
       asyncHooks.destroy(1)
     }
   })
-  .add('ScopeManager (no scope nested)', {
+  .add('ScopeManager (no scope nested x10)', {
     fn () {
       let id = 1
 

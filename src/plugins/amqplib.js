@@ -24,18 +24,32 @@ function createWrapDispatchMessage (tracer, config) {
   return function wrapDispatchMessage (dispatchMessage) {
     return function dispatchMessageWithTrace (fields, message) {
       const span = tracer.startSpan('amqp.command')
+      const scopeManager = tracer.scopeManager()
 
       addTags(this, tracer, config, span, 'basic.deliver', fields)
 
-      setImmediate(() => {
-        tracer.scopeManager().activate(span, true)
+      if (scopeManager._experimental) {
+        const scope = scopeManager.activate(span)
 
         try {
           dispatchMessage.apply(this, arguments)
         } catch (e) {
           throw addError(span, e)
+        } finally {
+          span.finish()
+          scope.close()
         }
-      })
+      } else {
+        setImmediate(() => {
+          scopeManager.activate(span, true)
+
+          try {
+            dispatchMessage.apply(this, arguments)
+          } catch (e) {
+            throw addError(span, e)
+          }
+        })
+      }
     }
   }
 }

@@ -1,11 +1,15 @@
 'use strict'
 
-const tracer = require('../..').init()
+const tracer = require('../../..').init({
+  experimental: {
+    scopeManager: true
+  }
+})
 
 const test = require('tape')
-const profile = require('../profile')
+const profile = require('../../profile')
 
-test('ScopeManager should destroy executions even if their context is already destroyed', t => {
+test('ScopeManager (new) should destroy executions even if their context is already destroyed', t => {
   profile(t, operation)
 
   function operation (done) {
@@ -13,7 +17,7 @@ test('ScopeManager should destroy executions even if their context is already de
   }
 })
 
-test('ScopeManager should not leak when using scopes with recursive timers', t => {
+test('ScopeManager (new) should not leak when using scopes with recursive timers', t => {
   profile(t, operation)
 
   function operation (done) {

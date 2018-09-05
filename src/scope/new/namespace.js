@@ -7,7 +7,7 @@ class Namespace {
   }
 
   create () {
-    return Object.create(this._active)
+    return {}
   }
 
   active () {

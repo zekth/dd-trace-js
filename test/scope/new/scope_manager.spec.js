@@ -110,34 +110,6 @@ describe('ScopeManager', () => {
     expect(scope.close).to.have.been.called
   })
 
-  it('should wait the end of the asynchronous context to finish pending spans', () => {
-    const span = { finish: sinon.stub() }
-
-    asyncHooks.init(1)
-    asyncHooks.before(1)
-
-    scopeManager.activate(span, true)
-
-    asyncHooks.init(2)
-    asyncHooks.after(1)
-    asyncHooks.destroy(1)
-    asyncHooks.before(2)
-
-    expect(span.finish).to.not.have.been.called
-
-    asyncHooks.init(3)
-    asyncHooks.after(2)
-    asyncHooks.destroy(2)
-    asyncHooks.before(3)
-
-    expect(span.finish).to.not.have.been.called
-
-    asyncHooks.after(3)
-    asyncHooks.destroy(3)
-
-    expect(span.finish).to.have.been.called
-  })
-
   it('should propagate parent context to children', () => {
     const span = {}
     const scope = scopeManager.activate(span)
