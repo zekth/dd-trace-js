@@ -11,12 +11,14 @@ const baggageExpr = new RegExp(`^${baggagePrefix}(.+)$`)
 
 class TextMapPropagator {
   inject (spanContext, carrier) {
-    carrier[traceKey] = new Int64BE(spanContext.traceId.toBuffer()).toString()
-    carrier[spanKey] = new Int64BE(spanContext.spanId.toBuffer()).toString()
+    if (spanContext.sampled) {
+      carrier[traceKey] = new Int64BE(spanContext.traceId.toBuffer()).toString()
+      carrier[spanKey] = new Int64BE(spanContext.spanId.toBuffer()).toString()
 
-    spanContext.baggageItems && Object.keys(spanContext.baggageItems).forEach(key => {
-      carrier[baggagePrefix + key] = String(spanContext.baggageItems[key])
-    })
+      spanContext.baggageItems && Object.keys(spanContext.baggageItems).forEach(key => {
+        carrier[baggagePrefix + key] = String(spanContext.baggageItems[key])
+      })
+    }
   }
 
   extract (carrier) {

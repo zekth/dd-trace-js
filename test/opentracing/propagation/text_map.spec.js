@@ -36,6 +36,20 @@ describe('TextMapPropagator', () => {
       expect(carrier).to.deep.equal(textMap)
     })
 
+    it('should skip injection when the trace is not sampled', () => {
+      const carrier = {}
+      const spanContext = new SpanContext({
+        traceId: new Uint64BE(0, 123),
+        spanId: new Uint64BE(-456),
+        baggageItems,
+        sampled: false
+      })
+
+      propagator.inject(spanContext, carrier)
+
+      expect(carrier).to.deep.equal({})
+    })
+
     it('should handle non-string values', () => {
       const carrier = {}
       const spanContext = new SpanContext({
