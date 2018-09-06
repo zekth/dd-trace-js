@@ -11,8 +11,6 @@ class Scope {
     this._ns = ns
     this._context = context
     this._finishSpanOnClose = !!finishSpanOnClose
-
-    ns.enter(context)
   }
 
   /**

@@ -200,6 +200,8 @@ function withoutScope (fn) {
   return function () {
     let active
 
+    // scopeManager.activate(null)
+
     while ((active = scopeManager.active())) {
       active.close()
     }

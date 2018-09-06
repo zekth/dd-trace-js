@@ -57,15 +57,20 @@ class ScopeManager {
    */
   activate (span, finishSpanOnClose) {
     const context = this._ns.create()
-    const scopes = this._scopes.get(this._currentId)
 
-    context.scope = new Scope(span, this._ns, context, finishSpanOnClose)
+    if (span) {
+      const scopes = this._scopes.get(this._currentId)
 
-    if (scopes) {
-      scopes.push(context.scope)
-    } else {
-      this._scopes.set(this._currentId, [context.scope])
+      context.scope = new Scope(span, this._ns, context, finishSpanOnClose)
+
+      if (scopes) {
+        scopes.push(context.scope)
+      } else {
+        this._scopes.set(this._currentId, [context.scope])
+      }
     }
+
+    this._ns.enter(context)
 
     return context.scope
   }
