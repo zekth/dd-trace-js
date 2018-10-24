@@ -9,7 +9,7 @@ const Memcached = require('memcached')
 const profile = require('../../profile')
 
 test('memcached plugin should not leak', t => {
-  const memcached = new Memcached('localhost:11211', { retries: 0 })
+  const memcached = new Memcached('localhost:11233', { retries: 0 })
 
   profile(t, operation).then(() => memcached.end())
 

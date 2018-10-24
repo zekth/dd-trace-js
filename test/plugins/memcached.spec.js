@@ -26,7 +26,7 @@ describe('Plugin', () => {
         after(() => agent.close())
 
         it('should do automatic instrumentation when using callbacks', done => {
-          memcached = new Memcached('localhost:11211', { retries: 0 })
+          memcached = new Memcached('localhost:11233', { retries: 0 })
 
           agent
             .use(traces => {
@@ -36,7 +36,7 @@ describe('Plugin', () => {
               expect(traces[0][0]).to.have.property('type', 'memcached')
               expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('out.host', 'localhost')
-              expect(traces[0][0].meta).to.have.property('out.port', '11211')
+              expect(traces[0][0].meta).to.have.property('out.port', '11233')
               expect(traces[0][0].meta).to.have.property('memcached.query', 'get test')
             })
             .then(done)
@@ -48,7 +48,7 @@ describe('Plugin', () => {
         it('should run the callback in the parent context', done => {
           if (process.env.DD_CONTEXT_PROPAGATION === 'false') return done()
 
-          memcached = new Memcached('localhost:11211', { retries: 0 })
+          memcached = new Memcached('localhost:11233', { retries: 0 })
 
           const scope = tracer.scopeManager().activate({})
 
@@ -59,7 +59,7 @@ describe('Plugin', () => {
         })
 
         it('should handle errors', done => {
-          memcached = new Memcached('localhost:11211', { retries: 0 })
+          memcached = new Memcached('localhost:11233', { retries: 0 })
 
           let error
 
@@ -79,12 +79,12 @@ describe('Plugin', () => {
         })
 
         it('should support an array of servers', done => {
-          memcached = new Memcached(['localhost:11211'], { retries: 0 })
+          memcached = new Memcached(['localhost:11233'], { retries: 0 })
 
           agent
             .use(traces => {
               expect(traces[0][0].meta).to.have.property('out.host', 'localhost')
-              expect(traces[0][0].meta).to.have.property('out.port', '11211')
+              expect(traces[0][0].meta).to.have.property('out.port', '11233')
             })
             .then(done)
             .catch(done)
@@ -94,14 +94,14 @@ describe('Plugin', () => {
 
         it('should support an object of servers with weights', done => {
           memcached = new Memcached({
-            'localhost:11211': 1,
-            'other:11211': 1
+            'localhost:11233': 1,
+            'other:11233': 1
           }, { retries: 0 })
 
           agent
             .use(traces => {
               expect(traces[0][0].meta).to.have.property('out.host', 'localhost')
-              expect(traces[0][0].meta).to.have.property('out.port', '11211')
+              expect(traces[0][0].meta).to.have.property('out.port', '11233')
             })
             .then(done)
             .catch(done)
@@ -111,8 +111,8 @@ describe('Plugin', () => {
 
         it('should support redundancy', done => {
           memcached = new Memcached({
-            'localhost:11211': 1,
-            'other:11211': 1
+            'localhost:11233': 1,
+            'other:11233': 1
           }, {
             retries: 0,
             redundancy: 1
@@ -124,7 +124,7 @@ describe('Plugin', () => {
             agent
               .use(traces => {
                 expect(traces[0][0].meta).to.have.property('out.host', 'localhost')
-                expect(traces[0][0].meta).to.have.property('out.port', '11211')
+                expect(traces[0][0].meta).to.have.property('out.port', '11233')
               })
               .then(done)
               .catch(done)
@@ -140,7 +140,7 @@ describe('Plugin', () => {
         after(() => agent.close())
 
         beforeEach(() => {
-          memcached = new Memcached('localhost:11211', { retries: 0 })
+          memcached = new Memcached('localhost:11233', { retries: 0 })
         })
 
         it('should be configured with the correct values', done => {

@@ -228,7 +228,7 @@ function waitForMemcached () {
     const operation = createOperation('memcached')
 
     operation.attempt(currentAttempt => {
-      const memcached = new Memcached('localhost:11211', { retries: 0 })
+      const memcached = new Memcached('localhost:11233', { retries: 0 })
 
       memcached.version((err, version) => {
         if (retryOperation(operation, err)) return

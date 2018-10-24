@@ -8,16 +8,12 @@ services:
   - mongodb
   - elasticsearch
   - rabbitmq
-  - memcached
 node_js:
   - "node"
   - "10"
   - "8"
   - "6"
   - "4"
-# jobs:
-#   include:
-#     - node_js: "node"
 cache: yarn
 before_install:
   - mysql -e 'CREATE DATABASE db;'
