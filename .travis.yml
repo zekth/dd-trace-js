@@ -18,6 +18,7 @@ node_js:
 # jobs:
 #   include:
 #     - node_js: "node"
+cache: yarn
 before_install:
   - mysql -e 'CREATE DATABASE db;'
 script: docker-compose up -d && yarn test

@@ -101,7 +101,7 @@ typings/
 # End of https://www.gitignore.io/api/node,macos,visualstudiocode
 
 package-lock.json
-yarn.lock
+*/**/yarn.lock
 out
 versions
 !test/node_modules
