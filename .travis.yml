@@ -2,6 +2,13 @@ sudo: required
 language: node_js
 services:
   - docker
+  - postgresql
+  - mysql
+  - redis-server
+  - mongodb
+  - elasticsearch
+  - rabbitmq
+  - memcached
 node_js:
   - "node"
   - "10"
