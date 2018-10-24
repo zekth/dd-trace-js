@@ -2,13 +2,13 @@ sudo: required
 language: node_js
 services:
   - docker
-# node_js:
-#   - "node"
-#   - "10"
-#   - "8"
-#   - "6"
-#   - "4"
-jobs:
-  include:
-    - node_js: "node"
+node_js:
+  - "node"
+  - "10"
+  - "8"
+  - "6"
+  - "4"
+# jobs:
+#   include:
+#     - node_js: "node"
 script: docker-compose up -d && yarn test
