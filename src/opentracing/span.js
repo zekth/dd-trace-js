@@ -103,13 +103,15 @@ class DatadogSpan extends Span {
   }
 
   _addTags (keyValuePairs) {
-    try {
-      Object.keys(keyValuePairs).forEach(key => {
+    if (!keyValuePairs || typeof keyValuePairs !== 'object') return
+
+    Object.keys(keyValuePairs).forEach(key => {
+      try {
         this._spanContext._tags[key] = String(keyValuePairs[key])
-      })
-    } catch (e) {
-      log.error(e)
-    }
+      } catch (e) {
+        log.error(`Invalid value for tag ${key}. Tags should be serializable to strings.`)
+      }
+    })
   }
 
   _finish (finishTime) {
@@ -131,7 +133,7 @@ class DatadogSpan extends Span {
     this._spanContext._children
       .filter(child => !child.context()._isFinished)
       .forEach(child => {
-        log.error(`Parent span ${this} was finished before child span ${child}.`)
+        log.error(`Parent span %s was finished before child span %s.`, [this, child])
       })
   }
 }

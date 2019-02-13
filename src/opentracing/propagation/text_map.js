@@ -22,7 +22,9 @@ class TextMapPropagator {
     this._injectSamplingPriority(spanContext, carrier)
     this._injectBaggageItems(spanContext, carrier)
 
-    log.debug(() => `Inject into carrier: ${JSON.stringify(pick(carrier, logKeys))}.`)
+    log.debug(`Inject into carrier: %s.`, () => [
+      JSON.stringify(pick(carrier, logKeys))
+    ])
   }
 
   extract (carrier) {
@@ -39,7 +41,9 @@ class TextMapPropagator {
     this._extractBaggageItems(carrier, spanContext)
     this._extractSamplingPriority(carrier, spanContext)
 
-    log.debug(() => `Extract from carrier: ${JSON.stringify(pick(carrier, logKeys))}.`)
+    log.debug(`Extract from carrier: %s.`, () => [
+      JSON.stringify(pick(carrier, logKeys))
+    ])
 
     return spanContext
   }

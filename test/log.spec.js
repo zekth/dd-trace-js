@@ -2,16 +2,17 @@
 
 /* eslint-disable no-console */
 
+const levels = ['debug', 'info', 'warn', 'error']
+
 describe('log', () => {
   let log
   let logger
-  let error
+  let clock
 
   beforeEach(() => {
-    sinon.stub(console, 'log')
-    sinon.stub(console, 'error')
+    levels.forEach(level => sinon.stub(console, level))
 
-    error = new Error()
+    clock = sinon.useFakeTimers()
 
     logger = {
       debug: sinon.spy(),
@@ -19,117 +20,109 @@ describe('log', () => {
     }
 
     log = require('../src/log')
-    log.toggle(true)
   })
 
   afterEach(() => {
     log.reset()
-    console.log.restore()
-    console.error.restore()
+    clock.restore()
+    levels.forEach(level => console[level].restore())
   })
 
   it('should support chaining', () => {
     expect(() => {
       log
         .use(logger)
-        .toggle(true)
+        .backoff(true)
         .error('error')
         .debug('debug')
         .reset()
     }).to.not.throw()
   })
 
-  describe('debug', () => {
-    it('should log to console by default', () => {
-      log.debug('debug')
+  levels.forEach(level => {
+    describe(level, () => {
+      it('should log to console by default', () => {
+        log[level]('message')
 
-      expect(console.log).to.have.been.calledWith('debug')
-    })
+        expect(console[level]).to.have.been.calledWith('message')
+      })
 
-    it('should support callbacks that return a message', () => {
-      log.debug(() => 'debug')
+      it('should accept placeholder arguments', () => {
+        log[level]('foo %s', ['bar'])
 
-      expect(console.log).to.have.been.calledWith('debug')
+        expect(console[level]).to.have.been.calledWith('foo bar')
+      })
+
+      it('should support callbacks that return placeholder arguments', () => {
+        log[level]('foo %s', () => ['bar'])
+
+        expect(console[level]).to.have.been.calledWith('foo bar')
+      })
+
+      it('should back off by default', () => {
+        log[level]('message')
+        log[level]('message')
+
+        expect(console[level]).to.have.been.calledOnce
+
+        clock.tick(10 * 1000)
+
+        log[level]('message')
+
+        expect(console[level]).to.have.been.calledTwice
+      })
+
+      it('should indicate how many messages were skipped when backing off', () => {
+        log[level]('message')
+        log[level]('message')
+
+        clock.tick(10 * 1000)
+
+        log[level]('message')
+
+        expect(console[level]).to.have.been.calledWith('message, 1 additional messages skipped.')
+      })
     })
   })
 
-  describe('error', () => {
-    it('should log to console by default', () => {
-      log.error(error)
+  describe('backoff', () => {
+    it('should enable backoff', () => {
+      log.backoff(true)
+      log.debug('message')
+      log.debug('message')
 
-      expect(console.error).to.have.been.calledWith(error)
+      expect(console.debug).to.have.been.calledOnce
     })
 
-    it('should support callbacks that return a error', () => {
-      log.error(() => error)
+    it('should disable backoff', () => {
+      log.backoff(false)
+      log.debug('message')
+      log.debug('message')
 
-      expect(console.error).to.have.been.calledWith(error)
-    })
-
-    it('should convert strings to errors', () => {
-      log.error('error')
-
-      expect(console.error).to.have.been.called
-      expect(console.error.firstCall.args[0]).to.be.instanceof(Error)
-      expect(console.error.firstCall.args[0]).to.have.property('message', 'error')
-    })
-
-    it('should convert messages from callbacks to errors', () => {
-      log.error(() => 'error')
-
-      expect(console.error).to.have.been.called
-      expect(console.error.firstCall.args[0]).to.be.instanceof(Error)
-      expect(console.error.firstCall.args[0]).to.have.property('message', 'error')
-    })
-  })
-
-  describe('toggle', () => {
-    it('should disable the logger', () => {
-      log.toggle(false)
-      log.debug('debug')
-      log.error(error)
-
-      expect(console.log).to.not.have.been.called
-      expect(console.error).to.not.have.been.called
-    })
-
-    it('should enable the logger', () => {
-      log.toggle(false)
-      log.toggle(true)
-      log.debug('debug')
-      log.error(error)
-
-      expect(console.log).to.have.been.calledWith('debug')
-      expect(console.error).to.have.been.calledWith(error)
+      expect(console.debug).to.have.been.calledTwice
     })
   })
 
   describe('use', () => {
     it('should set the underlying logger when valid', () => {
       log.use(logger)
-      log.debug('debug')
-      log.error(error)
+      log.debug('message')
 
-      expect(logger.debug).to.have.been.calledWith('debug')
-      expect(logger.error).to.have.been.calledWith(error)
+      expect(logger.debug).to.have.been.calledWith('message')
     })
 
     it('be a no op with an empty logger', () => {
       log.use(null)
-      log.debug('debug')
-      log.error(error)
+      log.debug('message')
 
-      expect(console.log).to.have.been.calledWith('debug')
-      expect(console.error).to.have.been.calledWith(error)
+      expect(console.debug).to.have.been.calledWith('message')
     })
 
     it('be a no op with an invalid logger', () => {
       log.use('invalid')
-      log.debug('debug')
-      log.error(error)
+      log.debug('message')
 
-      expect(console.log).to.have.been.calledWith('debug')
-      expect(console.error).to.have.been.calledWith(error)
+      expect(console.debug).to.have.been.calledWith('message')
     })
   })
 
@@ -137,22 +130,18 @@ describe('log', () => {
     it('should reset the logger', () => {
       log.use(logger)
       log.reset()
-      log.toggle(true)
-      log.debug('debug')
-      log.error(error)
+      log.debug('message')
 
-      expect(console.log).to.have.been.calledWith('debug')
-      expect(console.error).to.have.been.calledWith(error)
+      expect(console.debug).to.have.been.calledWith('message')
     })
 
-    it('should reset the toggle', () => {
+    it('should reset the backoff', () => {
       log.use(logger)
       log.reset()
-      log.debug('debug')
-      log.error(error)
+      log.debug('message')
+      log.debug('message')
 
-      expect(console.log).to.not.have.been.called
-      expect(console.error).to.not.have.been.called
+      expect(console.debug).to.have.been.calledOnce
     })
   })
 

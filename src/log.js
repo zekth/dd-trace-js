@@ -1,67 +1,103 @@
 'use strict'
 
-const memoize = require('lodash.memoize')
+const format = require('format-util')
 
-const _default = {
-  debug: message => console.log(message), /* eslint-disable-line no-console */
-  error: err => console.error(err) /* eslint-disable-line no-console */
-}
+const _default = console
 
-let _logger
-let _enabled
-let _deprecate
+let skipped = Object.create(null)
+let timeouts = Object.create(null)
+
+let _logger = _default
+let _backoff = true
 
 const log = {
   use (logger) {
-    if (logger && logger.debug instanceof Function && logger.error instanceof Function) {
+    if (logger && typeof logger.debug === 'function' && typeof logger.error === 'function') {
       _logger = logger
     }
 
     return this
   },
 
-  toggle (enabled) {
-    _enabled = enabled
+  backoff (enabled) {
+    _backoff = !!enabled
 
     return this
   },
 
   reset () {
-    _logger = _default
-    _enabled = false
-    _deprecate = memoize((code, message) => {
-      _logger.error(message)
-      return this
+    Object.keys(timeouts).forEach(key => {
+      clearTimeout(timeouts[key])
     })
 
+    _logger = _default
+    _backoff = true
+
+    skipped = Object.create(null)
+    timeouts = Object.create(null)
+
     return this
   },
 
-  debug (message) {
-    if (_enabled) {
-      _logger.debug(message instanceof Function ? message() : message)
+  debug (message, args) {
+    return this._log('debug', message, args)
+  },
+
+  info (message, args) {
+    return this._log(_logger.info ? 'info' : 'debug', message, args)
+  },
+
+  warn (message, args) {
+    return this._log(_logger.warn ? 'warn' : 'error', message, args)
+  },
+
+  error (message, args) {
+    return this._log('error', message, args)
+  },
+
+  _log (level, message, args) {
+    if (this._filter(message)) {
+      this._skip(message)
+    } else {
+      _logger[level](this._format(message, args))
     }
 
     return this
   },
 
-  error (err) {
-    if (_enabled) {
-      if (err instanceof Function) {
-        err = err()
-      }
-
-      _logger.error(typeof err === 'string' ? new Error(err) : err)
+  _format (message, args) {
+    if (_backoff && skipped[message] > 0) {
+      message = `${message}, ${skipped[message]} additional messages skipped.`
     }
 
-    return this
+    if (args) {
+      args = typeof args === 'function' ? args() : args
+      message = format.bind(null, message).apply(null, args)
+    }
+
+    return message
   },
 
-  deprecate (code, message) {
-    return _deprecate(code, message)
+  _skip (message) {
+    if (!skipped[message]) {
+      skipped[message] = 0
+    }
+
+    skipped[message]++
+  },
+
+  _filter (message) {
+    if (_backoff && timeouts[message]) return true
+
+    timeouts[message] = setTimeout(() => this._timeout(message), 10 * 1000)
+    timeouts[message].unref && timeouts[message].unref()
+
+    return false
+  },
+
+  _timeout (message) {
+    timeouts[message] = null
   }
 }
-
-log.reset()
 
 module.exports = log

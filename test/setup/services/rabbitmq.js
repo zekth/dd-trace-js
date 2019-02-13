@@ -13,6 +13,7 @@ function waitForRabbitMQ () {
           if (operation.retry(err)) return
           if (err) return reject(err)
 
+          conn.on('error', () => {})
           conn.close(() => resolve())
         })
     })

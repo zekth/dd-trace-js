@@ -27,7 +27,7 @@ class Instrumenter {
     try {
       this._set(require(`./plugins/${name}`), { name, config })
     } catch (e) {
-      log.debug(`Could not find a plugin named "${name}".`)
+      log.warn(`Could not find a plugin named "${name}".`)
     }
 
     this.reload()
@@ -133,9 +133,8 @@ class Instrumenter {
               this._patch(instrumentation, moduleExports, this._plugins.get(plugin).config)
             })
         } catch (e) {
-          log.error(e)
           this._fail(plugin)
-          log.debug(`Error while trying to patch ${meta.name}. The plugin has been disabled.`)
+          log.error(`Error while trying to patch ${meta.name} ${moduleVersion}. The plugin has been disabled.`)
         }
       })
 
@@ -161,7 +160,7 @@ class Instrumenter {
       if (instrumentations[i].versions && !matchVersion(moduleVersion, instrumentations[i].versions)) continue
       if (instrumentations[i].file && !exists(moduleBaseDir, instrumentations[i].file)) {
         this._fail(plugin)
-        log.debug([
+        log.error([
           `Plugin "${meta.name}" requires "${instrumentations[i].file}" which was not found.`,
           `The plugin was disabled.`
         ].join(' '))
@@ -201,7 +200,11 @@ class Instrumenter {
         try {
           instrumentation.unpatch.call(this, moduleExports)
         } catch (e) {
-          log.error(e)
+          log.error([
+            `Removing instrumentation for ${filename(instrumentation)} failed,`,
+            'which could result in instability.',
+            'Please disable corresponding plugins manually.'
+          ])
         }
       })
     }
@@ -219,7 +222,6 @@ class Instrumenter {
             })
           })
       } catch (e) {
-        log.error(e)
         this._fail(plugin)
         log.debug(`Error while trying to patch ${meta.name}. The plugin has been disabled.`)
       }
