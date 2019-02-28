@@ -1,9 +1,8 @@
 'use strict'
 
-const tracer = require('..').init()
 const benchmark = require('./benchmark')
-
 const suite = benchmark('dd-trace')
+const tracer = require('..').init()
 
 let operation
 

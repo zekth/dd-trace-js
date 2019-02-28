@@ -1,5 +1,7 @@
 'use strict'
 
+require('./console')
+
 const sinon = require('sinon')
 const chai = require('chai')
 const sinonChai = require('sinon-chai')
@@ -24,16 +26,6 @@ global.wrapIt = wrapIt
 global.withVersions = withVersions
 
 platform.use(node)
-
-before(() => {
-  ['error', 'warn', 'info', 'debug'].forEach(level => {
-    if (!console[level]) { // eslint-disable-line no-console
-      console[level] = sinon.stub() // eslint-disable-line no-console
-    } else if (!console[level].restore) { // eslint-disable-line no-console
-      sinon.stub(console, level)
-    }
-  })
-})
 
 afterEach(() => {
   agent.reset()

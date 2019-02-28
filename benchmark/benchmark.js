@@ -4,6 +4,8 @@
 
 const Benchmark = require('benchmark')
 
+require('../test/setup/console')
+
 Benchmark.options.maxTime = 0.1
 Benchmark.options.minSamples = 5
 

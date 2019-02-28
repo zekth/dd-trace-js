@@ -2,7 +2,12 @@
 
 const format = require('format-util')
 
-const _default = console
+const _default = {
+  error: console.error, // eslint-disable-line no-console
+  warn: console.warn, // eslint-disable-line no-console
+  info: console.info, // eslint-disable-line no-console
+  debug: console.debug || console.log // eslint-disable-line no-console
+}
 
 let skipped = Object.create(null)
 let timeouts = Object.create(null)
