@@ -297,32 +297,36 @@ Options can be configured as a parameter to the [init()](https://datadog.github.
 | port          | DD_TRACE_AGENT_PORT          | 8126      | The port of the trace agent that the tracer will submit to. |
 | env           | DD_ENV                       |           | Set an application’s environment e.g. `prod`, `pre-prod`, `stage`. |
 | logInjection  | DD_LOGS_INJECTION            | false     | Enable automatic injection of trace IDs in logs for supported logging libraries.
+| logger        |                              | console   | Use a custom logger instead of `console`. See https://datadog.github.io/dd-trace-js/#custom-logging |
 | tags          |                              | {}        | Set global tags that should be applied to all spans. |
 | sampleRate    |                              | 1         | Percentage of spans to sample as a float between 0 and 1. |
-| flushInterval |                              | 2000      | Interval in milliseconds at which the tracer will submit traces to the agent. |
 | experimental  |                              | {}        | Experimental features can be enabled all at once using boolean `true` or individually using key/value pairs. There are currently no experimental features available. |
 | plugins       |                              | true      | Whether or not to enable automatic instrumentation of external libraries using the built-in plugins. |
 
 <h3 id="custom-logging">Custom Logging</h3>
 
-By default, logging from this library is disabled. In order to get debbuging information and errors sent to logs, the `debug` options should be set to `true` in the [init()](https://datadog.github.io/dd-trace-js/Tracer.html#init__anchor) method.
-
-The tracer will then log debug information to `console.log()` and errors to `console.error()`. This behavior can be changed by passing a custom logger to the tracer. The logger should contain a `debug()` and `error()` methods that can handle messages and errors, respectively.
+By default, logging from this library is done using `console`. This behavior can
+be changed by passing a custom logger to the tracer. The logger should contain
+a `debug()`, `info()`, `warn()` and `error()` methods that can handle messages.
+Most logging libraries contain all these methods and can be used directly.
 
 For example:
 
 ```javascript
 const bunyan = require('bunyan')
 const logger = bunyan.createLogger({
-  name: 'dd-trace',
-  level: 'trace'
+  name: 'dd-trace'
 })
 
+const tracer = require('dd-trace').init({ logger })
+```
+
+The default behavior is to throttle logging to limit the verbosity that we add
+to your logs. To disable throttling, the [debug](https://datadog.github.io/dd-trace-js/interfaces/traceroptions.html#debug)
+option should be set to `true` in the [init()](https://datadog.github.io/dd-trace-js/interfaces/tracer.html#init) method.
+
+```javascript
 const tracer = require('dd-trace').init({
-  logger: {
-    debug: message => logger.trace(message),
-    error: err => logger.error(err)
-  },
   debug: true
 })
 ```
