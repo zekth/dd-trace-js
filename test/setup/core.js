@@ -11,6 +11,7 @@ const node = require('../../src/platform/node')
 const Scope = require('../../src/scope/new/scope')
 const agent = require('../plugins/agent')
 const externals = require('../plugins/externals.json')
+const log = require('../../src/log')
 
 const scope = new Scope()
 
@@ -24,6 +25,13 @@ global.wrapIt = wrapIt
 global.withVersions = withVersions
 
 platform.use(node)
+
+beforeEach(() => {
+  sinon.stub(log, 'error')
+  sinon.stub(log, 'warn')
+  sinon.stub(log, 'info')
+  sinon.stub(log, 'debug')
+})
 
 afterEach(() => {
   agent.reset()
