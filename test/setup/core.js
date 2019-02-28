@@ -26,12 +26,10 @@ global.withVersions = withVersions
 
 platform.use(node)
 
-beforeEach(() => {
-  sinon.stub(log, 'error')
-  sinon.stub(log, 'warn')
-  sinon.stub(log, 'info')
-  sinon.stub(log, 'debug')
-})
+sinon.stub(console, 'error')
+sinon.stub(console, 'warn')
+sinon.stub(console, 'info')
+sinon.stub(console, 'debug')
 
 afterEach(() => {
   agent.reset()

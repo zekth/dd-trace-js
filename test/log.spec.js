@@ -20,12 +20,6 @@ describe('log', () => {
     }
 
     log = require('../src/log')
-
-    // log methods are stubbed in test setup
-    log.error.restore()
-    log.warn.restore()
-    log.info.restore()
-    log.debug.restore()
   })
 
   afterEach(() => {
