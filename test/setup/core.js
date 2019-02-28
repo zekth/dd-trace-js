@@ -11,7 +11,6 @@ const node = require('../../src/platform/node')
 const Scope = require('../../src/scope/new/scope')
 const agent = require('../plugins/agent')
 const externals = require('../plugins/externals.json')
-const log = require('../../src/log')
 
 const scope = new Scope()
 
@@ -27,10 +26,11 @@ global.withVersions = withVersions
 platform.use(node)
 
 before(() => {
-  console.error.restore || sinon.stub(console, 'error') // eslint-disable-line no-console
-  console.warn.restore || sinon.stub(console, 'warn') // eslint-disable-line no-console
-  console.info.restore || sinon.stub(console, 'info') // eslint-disable-line no-console
-  console.debug.restore || sinon.stub(console, 'debug') // eslint-disable-line no-console
+  ['error', 'warn', 'info', 'debug'].forEach(level => {
+    if (!console[level] || !console[level].restore) { // eslint-disable-line no-console
+      sinon.stub(console, level)
+    }
+  })
 })
 
 afterEach(() => {
