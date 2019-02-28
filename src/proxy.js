@@ -19,7 +19,7 @@ class Tracer extends BaseTracer {
       `tracer.${method}() is deprecated.`,
       'Please use tracer.startSpan() and tracer.scope() instead.',
       'See: https://datadog.github.io/dd-trace-js/#manual-instrumentation.'
-    ].join(' '))
+    ])
   }
 
   init (options) {

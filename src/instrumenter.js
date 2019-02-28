@@ -163,7 +163,7 @@ class Instrumenter {
         log.error([
           `Plugin "${meta.name}" requires "${instrumentations[i].file}" which was not found.`,
           `The plugin was disabled.`
-        ].join(' '))
+        ])
         break
       }
     }

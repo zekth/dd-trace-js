@@ -10,7 +10,7 @@ function validate () {
       `Node ${process.versions.node} is not supported.`,
       `Only versions of Node matching "${SUPPORTED_VERSIONS}" are supported.`,
       `Tracing has been disabled.`
-    ].join(' '))
+    ])
   }
 }
 
