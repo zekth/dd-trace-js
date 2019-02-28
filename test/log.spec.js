@@ -137,21 +137,21 @@ describe('log', () => {
       expect(console.debug).to.have.been.calledWith('message')
     })
 
-    // it('should be backward compatible with previous API', () => {
-    //   delete logger.warn
-    //   delete logger.info
+    it('should be backward compatible with previous API', () => {
+      delete logger.warn
+      delete logger.info
 
-    //   log.use(logger)
-    //   log.debug('debug')
-    //   log.info('info')
-    //   log.warn('warn')
-    //   log.error('error')
+      log.use(logger)
+      log.debug('debug')
+      log.info('info')
+      log.warn('warn')
+      log.error('error')
 
-    //   expect(logger.debug).to.have.been.calledWith('debug')
-    //   expect(logger.debug).to.have.been.calledWith('info')
-    //   expect(logger.error).to.have.been.calledWith('warn')
-    //   expect(logger.error).to.have.been.calledWith('error')
-    // })
+      expect(logger.debug).to.have.been.calledWith('debug')
+      expect(logger.debug).to.have.been.calledWith('info')
+      expect(logger.error).to.have.been.calledWith('warn')
+      expect(logger.error).to.have.been.calledWith('error')
+    })
   })
 
   describe('reset', () => {
