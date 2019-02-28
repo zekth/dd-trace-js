@@ -27,7 +27,9 @@ platform.use(node)
 
 before(() => {
   ['error', 'warn', 'info', 'debug'].forEach(level => {
-    if (!console[level] || !console[level].restore) { // eslint-disable-line no-console
+    if (!console[level]) { // eslint-disable-line no-console
+      console[level] = sinon.stub() // eslint-disable-line no-console
+    } else if (!console[level].restore) { // eslint-disable-line no-console
       sinon.stub(console, level)
     }
   })
