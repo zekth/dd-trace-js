@@ -223,7 +223,7 @@ class Instrumenter {
           })
       } catch (e) {
         this._fail(plugin)
-        log.debug(`Error while trying to patch ${meta.name}. The plugin has been disabled.`)
+        log.error(`Error while trying to patch ${meta.name}. The plugin has been disabled.`)
       }
     }
   }

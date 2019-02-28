@@ -26,15 +26,21 @@ class Writer {
       const formattedTrace = trace.finished.map(format)
 
       if (spanContext._sampling.drop === true) {
-        log.debug(() => `Dropping trace due to user configured filtering: ${JSON.stringify(formattedTrace)}`)
+        log.debug('Dropping trace due to user configured filtering: %s', () => [
+          JSON.stringify(formattedTrace)
+        ])
         return
       }
 
-      log.debug(() => `Encoding trace: ${JSON.stringify(formattedTrace)}`)
+      log.debug('Encoding trace: %s', () => [
+        JSON.stringify(formattedTrace)
+      ])
 
       const buffer = encode(formattedTrace)
 
-      log.debug(() => `Adding encoded trace to buffer: ${buffer.toString('hex').match(/../g).join(' ')}`)
+      log.debug('Adding encoded trace to buffer: %s', () => [
+        buffer.toString('hex').match(/../g).join(' ')
+      ])
 
       if (this.length < this._size) {
         this._queue.push(buffer)
@@ -71,16 +77,18 @@ class Writer {
       }
     }
 
-    log.debug(() => `Request to the agent: ${JSON.stringify(options)}`)
+    log.debug('Request to the agent: %s', () => [
+      JSON.stringify(options)
+    ])
 
     platform
       .request(Object.assign({ data }, options))
       .then(res => {
-        log.debug(`Response from the agent: ${res}`)
+        log.debug('Response from the agent: %s', [res])
 
         this._prioritySampler.update(JSON.parse(res).rate_by_service)
       })
-      .catch(e => log.error(e))
+      .catch(e => log.error('Error from the agent: %s', [e.message]))
   }
 
   _squeeze (buffer) {

@@ -30,8 +30,8 @@ function formatSpan (span) {
     trace_id: spanContext._traceId,
     span_id: spanContext._spanId,
     parent_id: spanContext._parentId,
-    name: serialize(spanContext._name),
-    resource: serialize(spanContext._name),
+    name: serialize('name', spanContext._name),
+    resource: serialize('resource.name', spanContext._name),
     error: 0,
     meta: {},
     metrics: {},
@@ -95,18 +95,18 @@ function extractMetrics (trace, span) {
 }
 
 function addTag (meta, key, value) {
-  value = serialize(value)
+  value = serialize(key, value)
 
   if (typeof value === 'string') {
     meta[key] = value
   }
 }
 
-function serialize (obj) {
+function serialize (key, value) {
   try {
-    return obj && typeof obj.toString !== 'function' ? JSON.stringify(obj) : String(obj)
+    return value && typeof value.toString !== 'function' ? JSON.stringify(value) : String(value)
   } catch (e) {
-    log.error(e)
+    log.warn(`Unable to serialize span metadata "${key}". Please make sure it can be serialized to string.`)
   }
 }
 

@@ -7,7 +7,7 @@ const urlFilter = {
     if (typeof config.filter === 'function') {
       return config.filter
     } else if (config.hasOwnProperty('filter')) {
-      log.error('Expected `filter` to be a function. Overriding filter property to default.')
+      log.warn('Expected `filter` to be a function. Overriding filter property to default.')
     }
 
     const whitelist = config.whitelist || /.*/

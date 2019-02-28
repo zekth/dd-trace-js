@@ -109,7 +109,7 @@ class DatadogSpan extends Span {
       try {
         this._spanContext._tags[key] = String(keyValuePairs[key])
       } catch (e) {
-        log.error(`Invalid value for tag ${key}. Tags should be serializable to strings.`)
+        log.warn(`Invalid value for tag ${key}. Tags should be serializable to strings.`)
       }
     })
   }
@@ -133,7 +133,7 @@ class DatadogSpan extends Span {
     this._spanContext._children
       .filter(child => !child.context()._isFinished)
       .forEach(child => {
-        log.error(`Parent span %s was finished before child span %s.`, [this, child])
+        log.warn(`Parent span %s was finished before child span %s.`, [this, child])
       })
   }
 }

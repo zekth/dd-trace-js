@@ -300,10 +300,10 @@ function getHeadersToRecord (config) {
     try {
       return config.headers.map(key => key.toLowerCase())
     } catch (err) {
-      log.error(err)
+      log.warn('Unable to record HTTP server headers.')
     }
   } else if (config.hasOwnProperty('headers')) {
-    log.error('Expected `headers` to be an array of strings.')
+    log.warn('Expected `headers` to be an array of strings.')
   }
   return []
 }
@@ -312,7 +312,7 @@ function getStatusValidator (config) {
   if (typeof config.validateStatus === 'function') {
     return config.validateStatus
   } else if (config.hasOwnProperty('validateStatus')) {
-    log.error('Expected `validateStatus` to be a function.')
+    log.warn('Expected `validateStatus` to be a function.')
   }
   return code => code < 500
 }

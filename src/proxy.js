@@ -15,7 +15,7 @@ class Tracer extends BaseTracer {
     super()
     this._tracer = noop
     this._instrumenter = new Instrumenter(this)
-    this._deprecate = method => log.deprecate(`tracer.${method}`, [
+    this._deprecate = method => log.warn([
       `tracer.${method}() is deprecated.`,
       'Please use tracer.startSpan() and tracer.scope() instead.',
       'See: https://datadog.github.io/dd-trace-js/#manual-instrumentation.'
@@ -37,7 +37,7 @@ class Tracer extends BaseTracer {
           this._instrumenter.patch(config)
         }
       } catch (e) {
-        log.error(e)
+        log.error('The tracer could not be initialized.')
       }
     }
 

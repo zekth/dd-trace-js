@@ -72,7 +72,7 @@ class DatadogTracer extends Tracer {
       this._prioritySampler.sample(spanContext)
       this._propagators[format].inject(spanContext, carrier)
     } catch (e) {
-      log.error(e)
+      log.warn(`Unable to injet span context into carrier using format ${format}.`)
     }
 
     return this
@@ -82,7 +82,7 @@ class DatadogTracer extends Tracer {
     try {
       return this._propagators[format].extract(carrier)
     } catch (e) {
-      log.error(e)
+      log.warn(`Unable to extract span context from carrier using format ${format}.`)
       return null
     }
   }
@@ -93,14 +93,14 @@ function getReferences (references) {
 
   return references.filter(ref => {
     if (!(ref instanceof Reference)) {
-      log.error(() => `Expected ${ref} to be an instance of opentracing.Reference`)
+      log.warn('Expected %s to be an instance of opentracing.Reference', [ref])
       return false
     }
 
     const spanContext = ref.referencedContext()
 
     if (!(spanContext instanceof SpanContext)) {
-      log.error(() => `Expected ${spanContext} to be an instance of SpanContext`)
+      log.warn('Expected %s to be an instance of SpanContext', [spanContext])
       return false
     }
 
