@@ -26,10 +26,12 @@ global.withVersions = withVersions
 
 platform.use(node)
 
-sinon.stub(console, 'error')
-sinon.stub(console, 'warn')
-sinon.stub(console, 'info')
-sinon.stub(console, 'debug')
+before(() => {
+  console.error.restore || sinon.stub(console, 'error') // eslint-disable-line no-console
+  console.warn.restore || sinon.stub(console, 'warn') // eslint-disable-line no-console
+  console.info.restore || sinon.stub(console, 'info') // eslint-disable-line no-console
+  console.debug.restore || sinon.stub(console, 'debug') // eslint-disable-line no-console
+})
 
 afterEach(() => {
   agent.reset()
