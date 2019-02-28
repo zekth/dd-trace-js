@@ -172,7 +172,7 @@ describe('Writer', () => {
       writer.flush()
 
       setTimeout(() => {
-        expect(log.error).to.have.been.calledWith(error)
+        expect(log.error).to.have.been.calledWith('Error from the agent: %s', ['boom'])
         done()
       })
     })

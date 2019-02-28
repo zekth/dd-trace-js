@@ -78,7 +78,7 @@ describe('Tracer', () => {
 
     log = {
       use: sinon.spy(),
-      toggle: sinon.spy()
+      backoff: sinon.spy()
     }
 
     Tracer = proxyquire('../src/opentracing/tracer', {
