@@ -82,6 +82,12 @@ describe('log', () => {
 
         expect(console[level]).to.have.been.calledWith('message, 1 additional messages skipped.')
       })
+
+      it('should accept a message as an array', () => {
+        log[level](['foo', 'bar'])
+
+        expect(console[level]).to.have.been.calledWith('foo bar')
+      })
     })
   })
 

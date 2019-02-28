@@ -15,7 +15,8 @@ function waitForRedis () {
         }
       })
 
-      client.on('connect', (a) => {
+      client.on('error', () => {})
+      client.on('connect', () => {
         client.quit()
         resolve()
       })

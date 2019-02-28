@@ -114,7 +114,7 @@ describe('Tracer', () => {
     tracer = new Tracer(config)
 
     expect(log.use).to.have.been.calledWith(config.logger)
-    expect(log.toggle).to.have.been.calledWith(config.debug)
+    expect(log.backoff).to.have.been.calledWith(!config.debug)
   })
 
   describe('startSpan', () => {

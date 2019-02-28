@@ -66,6 +66,10 @@ const log = {
   },
 
   _format (message, args) {
+    if (Array.isArray(message)) {
+      message = message.join(' ')
+    }
+
     if (_backoff && skipped[message] > 0) {
       message = `${message}, ${skipped[message]} additional messages skipped.`
     }
