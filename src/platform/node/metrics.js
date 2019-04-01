@@ -211,18 +211,10 @@ function captureNativeMetrics (debug) {
   client.gauge('cpu.user', userPercent.toFixed(2))
   client.gauge('cpu.total', totalPercent.toFixed(2))
 
-  client.gauge('event_loop.latency.max', stats.eventLoop.max)
-  client.gauge('event_loop.latency.min', stats.eventLoop.min)
-  client.gauge('event_loop.latency.sum', stats.eventLoop.sum)
-  client.gauge('event_loop.latency.avg', stats.eventLoop.avg)
-  client.gauge('event_loop.latency.count', stats.eventLoop.count)
+  histogram('event_loop.latency', stats.eventLoop)
 
   Object.keys(stats.gc).forEach(type => {
-    client.gauge(`gc.${type}.min`, stats.gc[type].min)
-    client.gauge(`gc.${type}.max`, stats.gc[type].max)
-    client.gauge(`gc.${type}.sum`, stats.gc[type].sum)
-    client.gauge(`gc.${type}.avg`, stats.gc[type].avg)
-    client.gauge(`gc.${type}.count`, stats.gc[type].count)
+    histogram(`gc.${type}`, stats.gc[type])
   })
 
   client.gauge('spans.finished', stats.spans.total.finished)
@@ -254,4 +246,14 @@ function captureNativeMetrics (debug) {
       })
     }
   }
+}
+
+function histogram (name, stats) {
+  client.gauge(`${name}.max`, stats.max)
+  client.gauge(`${name}.min`, stats.min)
+  client.gauge(`${name}.sum`, stats.sum)
+  client.gauge(`${name}.avg`, stats.avg)
+  client.gauge(`${name}.count`, stats.count)
+  client.gauge(`${name}.median`, stats.median)
+  client.gauge(`${name}.95percentile`, stats.p95)
 }

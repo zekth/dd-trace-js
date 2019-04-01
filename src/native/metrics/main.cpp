@@ -1,5 +1,9 @@
 #include <nan.h>
 
+// extern "C" {
+//   #include <tdigest/tdigest.h>
+// }
+
 #include "EventLoop.hpp"
 #include "GarbageCollection.hpp"
 #include "Heap.hpp"
@@ -69,6 +73,17 @@ namespace datadog {
 
       tracker.finish(handle);
     }
+
+    NAN_METHOD(bench) {
+      // td_histogram_t *h = td_new(1000);
+
+      // for (int i = 0; i < 10000; i++) {
+      //   td_add(h, i, 1);
+      // }
+
+      // printf("p50: %i\n", (int)td_quantile_of(h, 0.50));
+      // printf("p95: %i\n", (int)td_value_at(h, 0.95));
+    }
   }
 
   NAN_MODULE_INIT(init) {
@@ -79,6 +94,7 @@ namespace datadog {
     obj.set("stats", stats);
     obj.set("track", track);
     obj.set("finish", finish);
+    obj.set("bench", bench);
   }
 
   NODE_MODULE(metrics, init);

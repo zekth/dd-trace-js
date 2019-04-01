@@ -2,6 +2,7 @@
   "targets": [{
     "target_name": "metrics",
     "sources": [
+      "src/native/tdigest/tdigest.c",
       "src/native/metrics/Collector.cpp",
       "src/native/metrics/EventLoop.cpp",
       "src/native/metrics/GarbageCollection.cpp",
@@ -14,12 +15,12 @@
       "src/native/metrics/main.cpp"
     ],
     "include_dirs": [
-      "src",
+      "src/native",
       "<!(node -e \"require('nan')\")"
     ],
     "xcode_settings": {
       "MACOSX_DEPLOYMENT_TARGET": "10.9",
-      "OTHER_CFLAGS": [
+      "OTHER_CPLUSPLUSFLAGS": [
         "-std=c++11",
         "-stdlib=libc++",
         "-Wall",
@@ -28,14 +29,14 @@
     },
     "conditions": [
       ["OS == 'linux'", {
-        "cflags": [
+        "cflags_cc": [
           "-std=c++11",
           "-Wall",
           "-Werror"
         ]
       }],
       ["OS == 'win'", {
-        "cflags": [
+        "cflags_cc": [
           "/WX"
         ]
       }]

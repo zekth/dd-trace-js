@@ -429,12 +429,16 @@ describe('Platform', () => {
           expect(client.gauge).to.have.been.calledWith('event_loop.latency.sum')
           expect(client.gauge).to.have.been.calledWith('event_loop.latency.avg')
           expect(client.gauge).to.have.been.calledWith('event_loop.latency.count')
+          expect(client.gauge).to.have.been.calledWith('event_loop.latency.median')
+          expect(client.gauge).to.have.been.calledWith('event_loop.latency.95percentile')
 
           expect(client.gauge).to.have.been.calledWith('gc.all.max')
           expect(client.gauge).to.have.been.calledWith('gc.all.min')
           expect(client.gauge).to.have.been.calledWith('gc.all.sum')
           expect(client.gauge).to.have.been.calledWith('gc.all.avg')
           expect(client.gauge).to.have.been.calledWith('gc.all.count')
+          expect(client.gauge).to.have.been.calledWith('gc.all.median')
+          expect(client.gauge).to.have.been.calledWith('gc.all.95percentile')
         })
 
         it('should collect additional metrics in debug mode', () => {
