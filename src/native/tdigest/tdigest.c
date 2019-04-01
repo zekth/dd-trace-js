@@ -5,6 +5,10 @@
 
 #include "tdigest.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 static bool is_very_small(double val) {
      return !(val > .000000001 || val < -.000000001);
 }
