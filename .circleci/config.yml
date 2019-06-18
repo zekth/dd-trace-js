@@ -268,6 +268,19 @@ jobs:
           - PLUGINS=memcached
       - image: memcached:1.5-alpine
 
+  node-mssql:
+    <<: *node-plugin-base
+    docker:
+      - image: node:8
+        environment:
+          - SERVICES=mssql
+          - PLUGINS=mssql
+      - image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+        environment:
+          - "ACCEPT_EULA=Y"
+          - "SA_PASSWORD=DD_HUNTER2"
+          - "MSSQL_PID=Express"
+
   node-mysql:
     <<: *node-plugin-base
     docker:
@@ -541,7 +554,8 @@ workflows:
       - node-http2
       - node-koa
       - node-memcached
-      - node-mongodb-core
+      - node-mongodb-core'
+      - node-mssql
       - node-mysql
       - node-net
       - node-paperplane
@@ -613,6 +627,7 @@ workflows:
       - node-koa
       - node-memcached
       - node-mongodb-core
+      - node-mssql
       - node-mysql
       - node-net
       - node-paperplane

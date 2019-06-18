@@ -131,6 +131,7 @@ tracer.use('koa');
 tracer.use('koa', httpServerOptions);
 tracer.use('memcached');
 tracer.use('mongodb-core');
+tracer.use('mssql');
 tracer.use('mysql');
 tracer.use('mysql2');
 tracer.use('net');

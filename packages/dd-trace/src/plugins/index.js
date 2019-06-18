@@ -19,6 +19,7 @@ module.exports = {
   'koa': require('../../../../packages/datadog-plugin-koa/src'),
   'memcached': require('../../../../packages/datadog-plugin-memcached/src'),
   'mongodb-core': require('../../../../packages/datadog-plugin-mongodb-core/src'),
+  'mssql': require('../../../../packages/datadog-plugin-mssql/src'),
   'mysql': require('../../../../packages/datadog-plugin-mysql/src'),
   'mysql2': require('../../../../packages/datadog-plugin-mysql2/src'),
   'net': require('../../../../packages/datadog-plugin-net/src'),

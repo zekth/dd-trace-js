@@ -10,6 +10,6 @@ const globs = [
 ].map(glob => `'${glob}'`)
 
 const options = { stdio: [0, 1, 2] }
-const command = `yarn services && NO_DEPRECATION=* mocha --watch ${globs.join(' ')}`
+const command = `yarn services && NO_DEPRECATION=* mocha --inspect --watch ${globs.join(' ')}`
 
 execSync(command, options)

@@ -327,6 +327,7 @@ interface Plugins {
   "koa": plugins.koa;
   "memcached": plugins.memcached;
   "mongodb-core": plugins.mongodb_core;
+  "mssql": plugins.mssql;
   "mysql": plugins.mysql;
   "mysql2": plugins.mysql2;
   "net": plugins.net;
@@ -708,6 +709,12 @@ declare namespace plugins {
    * [mongodb-core](https://github.com/mongodb-js/mongodb-core) module.
    */
   interface mongodb_core extends Integration {}
+
+    /**
+   * This plugin automatically instruments the
+   * [mssql](https://github.com/tediousjs/node-mssql/) module.
+   */
+  interface mssql extends Integration {}
 
   /**
    * This plugin automatically instruments the
