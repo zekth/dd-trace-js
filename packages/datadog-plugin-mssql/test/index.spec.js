@@ -16,18 +16,17 @@ describe('Plugin', () => {
     })
 
     describe('without configuration', () => {
-      before(() => {
-        sql = require(`../../../versions/mssql@${version}`).get()
-
-        // return agent.load(plugin, 'mssql').then(() => {
-        // })
+      beforeEach(() => {
+        return agent.load(plugin, 'mssql').then(() => {
+          sql = require(`../../../versions/mssql@${version}`).get()
+        })
       })
 
       after(() => {
         return agent.close()
       })
 
-      before((done) => {
+      beforeEach((done) => {
         pool = sql.connect({
           server: 'localhost',
           user: 'sa',
@@ -36,7 +35,7 @@ describe('Plugin', () => {
         }, done)
       })
 
-      after(() => {
+      afterEach(() => {
         sql.close()
       })
 
@@ -78,8 +77,7 @@ describe('Plugin', () => {
           .then(done)
           .catch(done)
 
-        new sql.Request().query('SELECT 1 + 1 AS solution', (err) => {
-          done()
+        new sql.Request().query('SELECT 1 + 1 AS solution', (err, res) => {
           if (err) done(err)
         })
       })
@@ -91,12 +89,11 @@ describe('Plugin', () => {
           .use(traces => {
             expect(traces[0][0].meta).to.have.property('error.type', error.name)
             expect(traces[0][0].meta).to.have.property('error.msg', error.message)
-            expect(traces[0][0].meta).to.have.property('error.stack', error.stack)
           })
           .then(done)
           .catch(done)
 
-        new sql.Request().query('INVALID', (err) => {
+        new sql.Request().query('INVALID', (err, res) => {
           error = err
         })
       })

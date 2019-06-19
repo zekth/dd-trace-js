@@ -3,13 +3,13 @@
 const Tags = require('opentracing').Tags
 const analyticsSampler = require('../../dd-trace/src/analytics_sampler')
 
-function createWrapFunc (tracer, config) {
+function createWrapFunc (tracer, config, name) {
   return function wrapFunc (func) {
     return function funcWithTrace (command, callback) {
       const connectionConfig = this.parent.config
       const scope = tracer.scope()
       const childOf = scope.active()
-      const span = tracer.startSpan('mssql.query', {
+      const span = tracer.startSpan(`mssql.${name}`, {
         childOf,
         tags: {
           [Tags.SPAN_KIND]: Tags.SPAN_KIND_RPC_CLIENT,
@@ -29,9 +29,8 @@ function createWrapFunc (tracer, config) {
 
       analyticsSampler.sample(span, config.analytics)
 
-      const res = func.call(this, command, wrapCallback(tracer, span, childOf, callback))
+      const res = scope.bind(func, span).call(this, command, wrapCallback(tracer, span, childOf, callback))
 
-      span.finish()
       return res
     }
   }
@@ -48,24 +47,41 @@ function wrapCallback (tracer, span, parent, callback) {
     }
 
     span.finish()
-    return callback.apply(null, arguments)
+    if (callback) {
+      return tracer.scope().activate(parent, () => callback.apply(this, arguments))
+    }
   }
 }
 
 module.exports = [
   {
     name: 'mssql',
-    file: 'lib/base.js',
+    file: 'lib/tedious.js',
     versions: ['>=4'],
-    patch (mssql, tracer, config) {
-      this.wrap(mssql.Request.prototype, '_query', createWrapFunc(tracer, config))
-      this.wrap(mssql.Request.prototype, '_execute', createWrapFunc(tracer, config))
-      this.wrap(mssql.Request.prototype, '_batch', createWrapFunc(tracer, config))
+    patch (tedious, tracer, config) {
+      this.wrap(tedious.Request.prototype, '_query', createWrapFunc(tracer, config, 'query'))
+      this.wrap(tedious.Request.prototype, '_execute', createWrapFunc(tracer, config, 'execute'))
+      this.wrap(tedious.Request.prototype, '_batch', createWrapFunc(tracer, config, 'batch'))
     },
-    unpatch (mssql, tracer, config) {
-      this.unwrap(mssql.Request.prototype, '_query')
-      this.unwrap(mssql.Request.prototype, '_execute')
-      this.unwrap(mssql.Request.prototype, '_batch')
+    unpatch (tedious, tracer, config) {
+      this.unwrap(tedious.Request.prototype, '_query')
+      this.unwrap(tedious.Request.prototype, '_execute')
+      this.unwrap(tedious.Request.prototype, '_batch')
+    }
+  },
+  {
+    name: 'mssql',
+    file: 'lib/msnodesqlv8.js',
+    versions: ['>=4'],
+    patch (msnodesqlv8, tracer, config) {
+      this.wrap(msnodesqlv8.Request.prototype, '_query', createWrapFunc(tracer, config, 'query'))
+      this.wrap(msnodesqlv8.Request.prototype, '_execute', createWrapFunc(tracer, config, 'execute'))
+      this.wrap(msnodesqlv8.Request.prototype, '_batch', createWrapFunc(tracer, config, 'batch'))
+    },
+    unpatch (msnodesqlv8, tracer, config) {
+      this.unwrap(msnodesqlv8.Request.prototype, '_query')
+      this.unwrap(msnodesqlv8.Request.prototype, '_execute')
+      this.unwrap(msnodesqlv8.Request.prototype, '_batch')
     }
   }
 ]
