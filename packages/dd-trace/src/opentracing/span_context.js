@@ -1,6 +1,9 @@
 'use strict'
 
 const SpanContext = require('opentracing').SpanContext
+const padStart = require('string.prototype.padstart')
+
+padStart.shim()
 
 class DatadogSpanContext extends SpanContext {
   constructor (props) {
@@ -17,6 +20,8 @@ class DatadogSpanContext extends SpanContext {
     this._metrics = props.metrics || {}
     this._sampling = props.sampling || {}
     this._baggageItems = props.baggageItems || {}
+    this._traceFlags = props.traceFlags || {}
+    this._traceFlags.sampled = this._traceFlags.sampled !== false
     this._trace = props.trace || {
       started: [],
       finished: []

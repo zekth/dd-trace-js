@@ -10,6 +10,7 @@ const spanKey = 'x-datadog-parent-id'
 const originKey = 'x-datadog-origin'
 const samplingKey = 'x-datadog-sampling-priority'
 const baggagePrefix = 'ot-baggage-'
+const traceParentKey = 'x-datadog-traceparent'
 const baggageExpr = new RegExp(`^${baggagePrefix}(.+)$`)
 const logKeys = [traceKey, spanKey, samplingKey, originKey]
 
@@ -21,19 +22,15 @@ class TextMapPropagator {
     this._injectOrigin(spanContext, carrier)
     this._injectSamplingPriority(spanContext, carrier)
     this._injectBaggageItems(spanContext, carrier)
+    this._injectTraceParent(spanContext, carrier)
 
     log.debug(() => `Inject into carrier: ${JSON.stringify(pick(carrier, logKeys))}.`)
   }
 
   extract (carrier) {
-    if (!carrier[traceKey] || !carrier[spanKey]) {
-      return null
-    }
+    const spanContext = this._extractSpanContext(carrier)
 
-    const spanContext = new DatadogSpanContext({
-      traceId: new platform.Uint64BE(carrier[traceKey], 10),
-      spanId: new platform.Uint64BE(carrier[spanKey], 10)
-    })
+    if (!spanContext) return spanContext
 
     this._extractOrigin(carrier, spanContext)
     this._extractBaggageItems(carrier, spanContext)
@@ -64,6 +61,38 @@ class TextMapPropagator {
     spanContext._baggageItems && Object.keys(spanContext._baggageItems).forEach(key => {
       carrier[baggagePrefix + key] = String(spanContext._baggageItems[key])
     })
+  }
+
+  _injectTraceParent (spanContext, carrier) {
+    const version = '00'
+    const traceId = spanContext._traceId.toString('16').padStart(16, '0')
+    const spanId = spanContext._spanId.toString('16').padStart(8, '0')
+    const sampled = spanContext._traceFlags.sampled ? 0b00000001 : 0b00000000
+    const traceFlags = sampled.toString('16').padStart(2, '0')
+
+    carrier[traceParentKey] = `${version}-${traceId}-${spanId}-${traceFlags}`
+  }
+
+  _extractSpanContext (carrier) {
+    if (carrier[traceParentKey]) {
+      const parts = carrier[traceParentKey].split('-')
+      const traceFlags = parseInt(parts[3], '16')
+
+      return new DatadogSpanContext({
+        traceId: new platform.Uint64BE(parts[1].slice(-8), 16),
+        spanId: new platform.Uint64BE(parts[2], 16),
+        traceFlags: {
+          sampled: traceFlags & 0b00000001
+        }
+      })
+    } else if (carrier[traceKey] && carrier[spanKey]) {
+      return new DatadogSpanContext({
+        traceId: new platform.Uint64BE(carrier[traceKey], 10),
+        spanId: new platform.Uint64BE(carrier[spanKey], 10)
+      })
+    }
+
+    return null
   }
 
   _extractOrigin (carrier, spanContext) {

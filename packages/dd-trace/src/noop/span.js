@@ -20,6 +20,9 @@ class NoopSpan extends Span {
         value: new SpanContext({
           traceId: 0,
           spanId: 0,
+          traceFlags: {
+            sampled: false
+          },
           sampling: {
             priority: USER_REJECT
           }

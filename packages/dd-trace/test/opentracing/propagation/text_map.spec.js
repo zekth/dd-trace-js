@@ -89,6 +89,21 @@ describe('TextMapPropagator', () => {
 
       expect(carrier).to.have.property('x-datadog-origin', 'synthetics')
     })
+
+    it('should inject the trace parent with the format defined in the W3C', () => {
+      const carrier = {}
+      const spanContext = new SpanContext({
+        traceId: new platform.Uint64BE(0x123),
+        spanId: new platform.Uint64BE(0x456),
+        traceFlags: {
+          sampled: true
+        }
+      })
+
+      propagator.inject(spanContext, carrier)
+
+      expect(carrier).to.have.property('x-datadog-traceparent', '00-0000000000000123-00000456-01')
+    })
   })
 
   describe('extract', () => {
@@ -131,6 +146,22 @@ describe('TextMapPropagator', () => {
       const spanContext = propagator.extract(carrier)
 
       expect(spanContext._trace).to.have.property('origin', 'synthetics')
+    })
+
+    it('should extract the trace parent with the format defined in the W3C', () => {
+      textMap['x-datadog-traceparent'] = '00-0000000000000123-00000456-01'
+
+      const carrier = textMap
+      const spanContext = propagator.extract(carrier)
+
+      expect(spanContext).to.deep.equal(new SpanContext({
+        traceId: new platform.Uint64BE(0, 0x123),
+        spanId: new platform.Uint64BE(0x456),
+        baggageItems,
+        traceFlags: {
+          sampled: true
+        }
+      }))
     })
   })
 })

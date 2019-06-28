@@ -20,6 +20,7 @@ describe('SpanContext', () => {
       metrics: {},
       sampling: { priority: 2 },
       baggageItems: { foo: 'bar' },
+      traceFlags: { sampled: false },
       trace: {
         started: ['span1', 'span2'],
         finished: ['span1']
@@ -37,6 +38,7 @@ describe('SpanContext', () => {
       _metrics: {},
       _sampling: { priority: 2 },
       _baggageItems: { foo: 'bar' },
+      _traceFlags: { sampled: false },
       _trace: {
         started: ['span1', 'span2'],
         finished: ['span1']
@@ -55,6 +57,7 @@ describe('SpanContext', () => {
       metrics: {},
       sampling: {},
       baggageItems: {},
+      traceFlags: { sampled: true },
       trace: {
         started: [],
         finished: []
@@ -76,6 +79,7 @@ describe('SpanContext', () => {
       _metrics: {},
       _sampling: {},
       _baggageItems: {},
+      _traceFlags: { sampled: true },
       _trace: {
         started: [],
         finished: []

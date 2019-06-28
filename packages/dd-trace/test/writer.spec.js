@@ -118,7 +118,7 @@ describe('Writer', () => {
     })
 
     it('should not append if the span was dropped', () => {
-      span.context()._sampling.drop = true
+      span.context()._traceFlags.sampled = false
       writer.append(span)
 
       expect(writer._queue).to.be.empty
