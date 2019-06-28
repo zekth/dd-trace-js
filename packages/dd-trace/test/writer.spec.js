@@ -36,7 +36,8 @@ describe('Writer', () => {
       context: sinon.stub().returns({
         _trace: trace,
         _sampling: {},
-        _tags: {}
+        _tags: {},
+        _traceFlags: {}
       })
     }
 
