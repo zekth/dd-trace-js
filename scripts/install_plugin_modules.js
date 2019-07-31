@@ -105,7 +105,10 @@ function assertWorkspace () {
     version: '1.0.0',
     license: 'BSD-3-Clause',
     private: true,
-    workspaces: Array.from(workspaces)
+    workspaces: {
+      packages: Array.from(workspaces),
+      nohoist: [path.join('**', '**')]
+    }
   }, null, 2) + '\n')
 }
 
