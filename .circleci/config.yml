@@ -1,6 +1,7 @@
 version: 2.1
 
 orbs:
+  codecov: codecov/codecov@1.0.5
   win: circleci/windows@1.0.0
 
 node-core-base: &node-core-base
@@ -37,9 +38,7 @@ node-core-base: &node-core-base
         command: yarn test:core
     - store_artifacts:
         path: ./coverage/lcov-report
-    - run:
-        name: Code coverage
-        command: yarn codecov
+    - codecov/upload
     - run:
         name: Benchmark
         command: yarn bench
@@ -73,9 +72,7 @@ node-plugin-base: &node-plugin-base
         command: yarn test:plugins
     - store_artifacts:
         path: ./coverage/lcov-report
-    - run:
-        name: Code coverage
-        command: yarn codecov
+    - codecov/upload
     - run:
         name: Memory leak tests
         command: yarn leak:plugins
