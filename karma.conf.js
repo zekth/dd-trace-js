@@ -57,6 +57,7 @@ module.exports = function (config) {
     // how many browser should be started simultaneous
     concurrency: Infinity,
 
+    // https://github.com/webpack-contrib/karma-webpack
     webpack: {
       mode: 'development',
       node: false
