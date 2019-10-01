@@ -2,15 +2,8 @@ on: [push]
 
 jobs:
   hello_world_job:
-    runs-on: ubuntu-latest
+    container: node:12-alpine
     name: A job to say hello
     steps:
-    - uses: ./.github/ # Uses an action in the root directory
     - name: Hello world action step
-      id: hello
-      uses: actions/hello-world-docker-action@v1
-      with:
-        who-to-greet: 'Mona the Octocat'
-    # Use the output from the `hello` step
-    - name: Get the output time
-      run: echo "The time was ${{ steps.hello.outputs.time }}"
+      run: echo "Hello, World!"
