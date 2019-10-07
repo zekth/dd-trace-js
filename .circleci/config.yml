@@ -37,6 +37,9 @@ node-core-base: &node-core-base
         command: yarn test:core
     - store_artifacts:
         path: ./coverage/lcov-report
+    - run:
+        name: Code coverage
+        command: yarn codecov
 
 node-bench-base: &node-bench-base
   resource_class: small
@@ -80,6 +83,9 @@ node-plugin-base: &node-plugin-base
         command: yarn test:plugins
     - store_artifacts:
         path: ./coverage/lcov-report
+    - run:
+        name: Code coverage
+        command: yarn codecov
 
 jobs:
   # Linting
