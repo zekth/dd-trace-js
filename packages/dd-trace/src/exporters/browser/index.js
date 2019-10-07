@@ -1,18 +1,22 @@
 'use strict'
 
+const fetch = require('whatwg-fetch')
+
 const MAX_SIZE = 64 * 1024 // 64kb
+const { DD_TRACE_URL } = process.env
 
 // TODO: rename and refactor to support Node
+// TODO: flush more often
 
 class BrowserExporter {
-  constructor ({ apiKey, appKey }) {
+  constructor ({ clientToken }) {
     this._queue = []
-    this._apiKey = apiKey
-    this._appKey = appKey
-    this._url = `https://dd.datad0g.com/trace/api/experimental/intake` // TODO: config
-    this._size = 13
+    this._clientToken = clientToken
+    this._url = DD_TRACE_URL || 'https://public-trace-http-intake.logs.datadoghq.com'
+    this._size = 13 // {"traces":[]}
 
-    window.addEventListener('unload', () => this._flush())
+    window.addEventListener('beforeunload', () => this._flush())
+    window.addEventListener('visibilitychange', () => this._flush())
   }
 
   export (spans) {
@@ -28,15 +32,20 @@ class BrowserExporter {
   }
 
   _flush () {
-    if (this._queue.length > 0) {
-      const url = `${this._url}?api_key=${this._apiKey}&application_key=${this._appKey}`
-      const data = `{"traces":[${this._queue.join(',')}]}`
+    if (this._queue.length === 0) return
 
-      window.navigator.sendBeacon(url, data)
+    const url = `${this._url}/v1/input/${this._clientToken}`
+    const method = 'POST'
+    const body = `{"traces":[${this._queue.join(',')}]}`
+    const keepalive = true
+    const mode = 'no-cors'
+    const done = () => {}
 
-      this._queue = []
-      this._size = 13
-    }
+    this._queue = []
+    this._size = 13
+
+    fetch(url, { body, method, keepalive, mode })
+      .then(done, done)
   }
 }
 

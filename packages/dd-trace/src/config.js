@@ -35,6 +35,7 @@ class Config {
     const scope = coalesce(options.scope, platform.env('DD_TRACE_SCOPE'))
     const apiKey = coalesce(options.apiKey, platform.env('DD_API_KEY'))
     const appKey = coalesce(options.appKey, platform.env('DD_APP_KEY'))
+    const clientToken = coalesce(options.clientToken, platform.env('DD_CLIENT_TOKEN'))
 
     this.enabled = String(enabled) === 'true'
     this.debug = String(debug) === 'true'
@@ -63,6 +64,7 @@ class Config {
     this.scope = platform.env('DD_CONTEXT_PROPAGATION') === 'false' ? scopes.NOOP : scope
     this.apiKey = apiKey
     this.appKey = appKey
+    this.clientToken = clientToken
   }
 }
 
