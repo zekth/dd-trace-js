@@ -26,6 +26,9 @@ function createWrapExecute (tracer, config) {
 function createWrapPrepare (tracer, config) {
   return function wrapPrepare (prepare) {
     return function prepareWithTrace (options, cb) {
+      const scope = tracer.scope()
+      const childOf = scope.active()
+
       return prepare.call(this, options, function (err, statement) {
         if (err) return cb.apply(this, arguments)
 
@@ -37,7 +40,9 @@ function createWrapPrepare (tracer, config) {
           return wrapCommand(tracer, config, command, command.statement.query)
         }
 
-        return cb.call(this, err, statement)
+        statement.execute = scope.bind(statement.execute, childOf)
+
+        return scope.bind(cb, childOf).call(this, err, statement)
       })
     }
   }
