@@ -593,7 +593,7 @@ jobs:
       - ARCH=ia32
       - NODE_VERSIONS=*
 
-  test-linux-x64-legacy-node-8:
+  test-linux-x64-legacy-node-8: &test-linux-x64-legacy-node-8
     docker:
       - image: node:8
     working_directory: ~/dd-trace-js
@@ -609,6 +609,11 @@ jobs:
       - run:
           name: Unit tests
           command: yarn test:core
+
+  test-linux-x64-legacy-node-8-alpine:
+    <<: *test-linux-x64-legacy-node-8
+    docker:
+      - image: node:8-alpine
 
   alpine:
     docker:
