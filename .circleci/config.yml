@@ -604,7 +604,7 @@ jobs:
       - *restore-yarn-cache
       - *yarn-install
       - *save-yarn-cache
-        restore_cache:
+      - restore_cache:
           key: prebuild-linux-x64-legacy-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - *yarn-test-core
 
@@ -621,7 +621,7 @@ jobs:
       - *restore-yarn-cache
       - *yarn-install
       - *save-yarn-cache
-        restore_cache:
+      - restore_cache:
           key: prebuild-linux-x64-legacy-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - *yarn-test-core
 
