@@ -800,6 +800,9 @@ workflows:
       - test-linux-x64-legacy-node-8:
           requires:
             - prebuild-linux-x64-legacy
+      - test-linux-x64-legacy-node-8-alpine:
+          requires:
+            - prebuild-linux-x64-legacy
       - alpine
       - alpine-prebuilt:
           requires:
