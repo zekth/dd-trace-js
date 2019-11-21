@@ -502,9 +502,11 @@ jobs:
         run:
           name: Compile prebuilt binaries
           command: yarn prebuild
-      - store_artifacts:
+      - &store-prebuild-artifacts
+        store_artifacts:
           path: ./prebuilds
-      - save_cache:
+      - &save-prebuild-cache
+        save_cache:
           key: '{{ .Environment.CIRCLE_JOB }}-{{ .Environment.CIRCLE_WORKFLOW_ID }}'
           paths:
             - ./prebuilds
@@ -527,8 +529,7 @@ jobs:
       - *yarn-install
       - *save-yarn-cache
       - *yarn-prebuild
-      - store_artifacts:
-          path: ./prebuilds
+      - *store-prebuild-artifacts
 
   prebuild-linux-x64-legacy:
     <<: *prebuild-linux-x64
@@ -591,6 +592,23 @@ jobs:
     environment:
       - ARCH=ia32
       - NODE_VERSIONS=*
+
+  test-linux-x64-legacy-node-8:
+    docker:
+      - image: node:8
+    working_directory: ~/dd-trace-js
+    resource_class: small
+    steps:
+      - checkout
+      - *yarn-versions
+      - *restore-yarn-cache
+      - *yarn-install
+      - *save-yarn-cache
+      - restore_cache:
+          key: prebuild-linux-x64-legacy-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+      - run:
+          name: Unit tests
+          command: yarn test:core
 
   alpine:
     docker:
@@ -728,15 +746,7 @@ workflows:
             tags:
               only:
                 - /v\d+\.\d+\.\d+([-a-z]+\.\d+)?/
-      - prebuild-linux-x64-legacy:
-          filters:
-            branches:
-              only:
-                - master
-                - /v\d+\.\d+/
-            tags:
-              only:
-                - /v\d+\.\d+\.\d+([-a-z]+\.\d+)?/
+      - prebuild-linux-x64-legacy
       - prebuild-linux-x32-legacy:
           filters:
             branches:
@@ -782,6 +792,9 @@ workflows:
             tags:
               only:
                 - /v\d+\.\d+\.\d+([-a-z]+\.\d+)?/
+      - test-linux-x64-legacy-node-8:
+          requires:
+            - prebuild-linux-x64-legacy
       - alpine
       - alpine-prebuilt:
           requires:
