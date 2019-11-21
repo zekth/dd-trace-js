@@ -604,6 +604,7 @@ jobs:
       - *restore-yarn-cache
       - *yarn-install
       - *save-yarn-cache
+      - run: yarn add dd-trace@0.17.0-beta.1
       - restore_cache:
           key: prebuild-linux-x64-legacy-{{ .Environment.CIRCLE_WORKFLOW_ID }}
       - *yarn-test-core
