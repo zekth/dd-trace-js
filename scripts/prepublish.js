@@ -3,6 +3,7 @@
 /* eslint-disable no-console */
 
 const axios = require('axios')
+const checksum = require('checksum')
 const fs = require('fs')
 const mkdirp = require('mkdirp')
 const os = require('os')
@@ -60,6 +61,8 @@ getPipeline()
   .then(downloadPrebuilds)
   .then(zipPrebuilds)
   .then(copyPrebuilds)
+  .then(extractPrebuilds)
+  .then(validatePrebuilds)
   .then(bundle)
   .catch(e => {
     process.exitCode = 1
@@ -142,13 +145,18 @@ function getPrebuildArtifacts (job) {
 }
 
 function downloadArtifacts (artifacts) {
-  return Promise.all(artifacts.map(downloadArtifact))
+  const files = artifacts.map(artifact => artifact.url)
+
+  return Promise.all([
+    Promise.all(files.map(downloadArtifact)),
+    Promise.all(files.map(file => downloadArtifact(`${file}.sha1`)))
+  ])
 }
 
-function downloadArtifact (artifact) {
-  return fetch(artifact.url, { responseType: 'stream' })
+function downloadArtifact (file) {
+  return fetch(file, { responseType: 'stream' })
     .then(response => {
-      const parts = artifact.url.split('/')
+      const parts = file.split('/')
       const basename = path.join(os.tmpdir(), parts.slice(-3, -1).join(path.sep))
       const filename = parts.slice(-1)[0]
 
@@ -168,6 +176,7 @@ function zipPrebuilds () {
       gzip: true,
       sync: true,
       portable: true,
+      strict: true,
       file: path.join(os.tmpdir(), `addons-${platform}.tgz`),
       cwd: os.tmpdir()
     }, [`prebuilds/${platform}`])
@@ -185,6 +194,31 @@ function copyPrebuilds () {
         path.join(basename, filename)
       )
     })
+}
+
+function extractPrebuilds () {
+  platforms.forEach(platform => {
+    tar.extract({
+      sync: true,
+      strict: true,
+      file: `addons-${platform}.tgz`
+    })
+  })
+}
+
+function validatePrebuilds () {
+  platforms.forEach(platform => {
+    fs.readdirSync(path.join('prebuilds', platform))
+      .filter(file => /^node-\d+\.node$/.test(file))
+      .forEach(file => {
+        const content = fs.readFileSync(path.join('prebuilds', platform, file))
+        const sum = fs.readFileSync(path.join('prebuilds', platform, `${file}.sha1`), 'ascii')
+
+        if (sum !== checksum(content)) {
+          throw new Error(`Invalid checksum for "prebuilds/${platform}/${file}".`)
+        }
+      })
+  })
 }
 
 function bundle () {
