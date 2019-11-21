@@ -604,16 +604,26 @@ jobs:
       - *restore-yarn-cache
       - *yarn-install
       - *save-yarn-cache
-      - restore_cache:
+        restore_cache:
           key: prebuild-linux-x64-legacy-{{ .Environment.CIRCLE_WORKFLOW_ID }}
-      - run:
-          name: Unit tests
-          command: yarn test:core
+      - *yarn-test-core
 
   test-linux-x64-legacy-node-8-alpine:
     <<: *test-linux-x64-legacy-node-8
     docker:
       - image: node:8-alpine
+    steps:
+      - run:
+          name: Install job dependencies
+          command: apk add ca-certificates
+      - checkout
+      - *yarn-versions
+      - *restore-yarn-cache
+      - *yarn-install
+      - *save-yarn-cache
+        restore_cache:
+          key: prebuild-linux-x64-legacy-{{ .Environment.CIRCLE_WORKFLOW_ID }}
+      - *yarn-test-core
 
   alpine:
     docker:
