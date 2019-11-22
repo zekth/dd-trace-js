@@ -517,7 +517,10 @@ jobs:
       - image: busybox
     working_directory: ~/dd-trace-js
     resource_class: small
-    steps: []
+    steps:
+      - run:
+          name: Skip
+          command: "true"
 
   prebuild-linux-x64-node-13:
     <<: *prebuild-linux-base
