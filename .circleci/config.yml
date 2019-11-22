@@ -590,21 +590,21 @@ jobs:
       - ARCH=x32
       - NODE_VERSIONS=8
 
-  prebuild-linux-x64-legacy:
-    <<: *prebuild-linux-x64
-    docker:
-      - image: rochdev/holy-node-box
-    environment:
-      - ARCH=x64
-      - NODE_VERSIONS=<10
+  # prebuild-linux-x64-legacy:
+  #   <<: *prebuild-linux-x64
+  #   docker:
+  #     - image: rochdev/holy-node-box
+  #   environment:
+  #     - ARCH=x64
+  #     - NODE_VERSIONS=<10
 
-  prebuild-linux-x32-legacy:
-    <<: *prebuild-linux-x32
-    docker:
-      - image: rochdev/holy-node-box
-    environment:
-      - ARCH=x32
-      - NODE_VERSIONS=<10
+  # prebuild-linux-x32-legacy:
+  #   <<: *prebuild-linux-x32
+  #   docker:
+  #     - image: rochdev/holy-node-box
+  #   environment:
+  #     - ARCH=x32
+  #     - NODE_VERSIONS=<10
 
   prebuild-darwin-x64: &prebuild-darwin
     macos:
