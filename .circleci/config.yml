@@ -81,7 +81,7 @@ node-plugin-base: &node-plugin-base
     - store_artifacts:
         path: ./coverage/lcov-report
 
-prebuild-linux-base:
+prebuild-linux-base: &prebuild-linux-base
   docker:
     - image: node:10.0.0
   working_directory: ~/dd-trace-js
