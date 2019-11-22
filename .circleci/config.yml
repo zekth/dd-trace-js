@@ -522,7 +522,6 @@ jobs:
           name: Skip
           command: "true"
 
-
   prebuild-linux-x64-node-13:
     <<: *prebuild-linux-base
     environment:
@@ -549,12 +548,16 @@ jobs:
 
   prebuild-linux-x64-node-9:
     <<: *prebuild-linux-base
+    docker:
+      - image: rochdev/holy-node-box
     environment:
       - ARCH=x64
       - NODE_VERSIONS=9
 
   prebuild-linux-x64-node-8:
     <<: *prebuild-linux-base
+    docker:
+      - image: rochdev/holy-node-box
     environment:
       - ARCH=x64
       - NODE_VERSIONS=8
@@ -585,12 +588,16 @@ jobs:
 
   prebuild-linux-x32-node-9:
     <<: *prebuild-linux-base
+    docker:
+      - image: rochdev/holy-node-box
     environment:
       - ARCH=x32
       - NODE_VERSIONS=9
 
   prebuild-linux-x32-node-8:
     <<: *prebuild-linux-base
+    docker:
+      - image: rochdev/holy-node-box
     environment:
       - ARCH=x32
       - NODE_VERSIONS=8
