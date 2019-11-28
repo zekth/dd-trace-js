@@ -78,10 +78,8 @@ function startReceiveSpan (tracer, config, link) {
   return span
 }
 
-function addTags (tracer, config, span, link) {
+function addTags (tracer, config, span, link = {}) {
   const address = getHost(link)
-
-  link = link || {}
 
   span.addTags({
     'service.name': config.service || `${tracer._service}-amqp`,
