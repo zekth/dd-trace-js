@@ -9,12 +9,18 @@ function createWrapInnerExecute (tracer, config) {
       const childOf = scope.active()
       const span = start(tracer, config, this, query)
 
-      callback = scope.bind(callback, childOf)
+      if (typeof arguments[arguments.length - 1] === 'function') {
+        callback = scope.bind(callback, childOf)
 
-      return scope.bind(_innerExecute, span).call(this, query, params, execOptions, function (err) {
-        finish(span, err)
-        return callback.apply(this, arguments)
-      })
+        arguments[arguments.length - 1] = function (err) {
+          finish(span, err)
+          return callback.apply(this, arguments)
+        }
+      } else {
+        arguments[arguments.length] = err => finish(span, err)
+      }
+
+      return scope.bind(_innerExecute, span).apply(this, arguments)
     }
   }
 }
@@ -79,7 +85,7 @@ function createWrapStream (tracer, config) {
   }
 }
 
-function start (tracer, config, client, query) {
+function start (tracer, config, client = {}, query) {
   const scope = tracer.scope()
   const childOf = scope.active()
   const span = tracer.startSpan('cassandra.query', {
@@ -90,13 +96,10 @@ function start (tracer, config, client, query) {
       'span.type': 'cassandra',
       'span.kind': 'client',
       'db.type': 'cassandra',
-      'cassandra.query': query
+      'cassandra.query': query,
+      'cassandra.keyspace': client.keyspace
     }
   })
-
-  if (client.keyspace) {
-    addTag(span, 'cassandra.keyspace', client.keyspace)
-  }
 
   return span
 }
@@ -135,13 +138,15 @@ function addError (span, error) {
 }
 
 function combine (queries) {
+  if (!Array.isArray(queries)) return []
+
   return queries
     .map(query => (query.query || query).replace(/;?$/, ';'))
     .join(' ')
 }
 
 function trim (str, size) {
-  if (str.length <= size) return str
+  if (!str || str.length <= size) return str
 
   return `${str.substr(0, size - 3)}...`
 }
