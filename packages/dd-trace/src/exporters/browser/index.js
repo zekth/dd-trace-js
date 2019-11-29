@@ -1,5 +1,6 @@
 'use strict'
 
+const debounce = require('lodash.debounce')
 const URL = require('url-parse')
 
 const MAX_SIZE = 64 * 1024 // 64kb
@@ -16,6 +17,8 @@ class BrowserExporter {
     this._env = env
     this._url = url || new URL('https://public-trace-http-intake.logs.datadoghq.com')
     this._size = 0
+
+    this._lazyFlush = debounce(this._flush, 250).bind(this)
 
     window.addEventListener('beforeunload', () => this._flush())
     window.addEventListener('visibilitychange', () => this._flush())
@@ -35,6 +38,8 @@ class BrowserExporter {
 
     this._size += size
     this._queue.push(json)
+
+    this._lazyFlush()
   }
 
   _flush () {
