@@ -3,24 +3,26 @@
 const tx = require('../../dd-trace/src/plugins/util/tx')
 
 function createWrapInnerExecute (tracer, config) {
+  const isValid = (args) => {
+    return args.length === 4 || typeof args[3] === 'function'
+  }
+
   return function wrapInnerExecute (_innerExecute) {
     return function _innerExecuteWithTrace (query, params, execOptions, callback) {
+      if (!isValid(arguments)) {
+        return _innerExecute.apply(this, arguments)
+      }
+
       const scope = tracer.scope()
       const childOf = scope.active()
       const span = start(tracer, config, this, query)
 
-      if (typeof arguments[arguments.length - 1] === 'function') {
-        callback = scope.bind(callback, childOf)
+      callback = scope.bind(callback, childOf)
 
-        arguments[arguments.length - 1] = function (err) {
-          finish(span, err)
-          return callback.apply(this, arguments)
-        }
-      } else {
-        arguments[arguments.length] = err => finish(span, err)
-      }
-
-      return scope.bind(_innerExecute, span).apply(this, arguments)
+      return scope.bind(_innerExecute, span).call(this, query, params, execOptions, function (err) {
+        finish(span, err)
+        return callback.apply(this, arguments)
+      })
     }
   }
 }
@@ -30,6 +32,10 @@ function createWrapExecutionStart (tracer, config) {
     return function startWithTrace (getHostCallback) {
       const span = tracer.scope().active()
       const execution = this
+
+      if (!isRequestValid(this, arguments, 1, span)) {
+        return start.apply(this, arguments)
+      }
 
       return start.call(this, function () {
         addHost(span, execution._connection)
@@ -44,6 +50,10 @@ function createWrapSend (tracer, config) {
     return function sendWithTrace (request, options, callback) {
       const span = tracer.scope().active()
       const handler = this
+
+      if (!isRequestValid(this, arguments, 3, span)) {
+        return send.apply(this, arguments)
+      }
 
       return send.call(this, request, options, function () {
         addHost(span, handler.connection)
@@ -61,14 +71,14 @@ function createWrapBatch (tracer, config) {
       const scope = tracer.scope()
       const fn = scope.bind(batch, span)
 
+      callback = arguments[arguments.length - 1]
+
+      if (typeof callback === 'function') {
+        arguments[arguments.length - 1] = tx.wrap(span, callback)
+      }
+
       try {
-        if (typeof callback === 'function') {
-          return fn.call(this, queries, options, tx.wrap(span, callback))
-        } else if (typeof options === 'function') {
-          return fn.call(this, queries, tx.wrap(span, options))
-        } else {
-          return tx.wrap(span, fn.apply(this, arguments))
-        }
+        return tx.wrap(span, fn.apply(this, arguments))
       } catch (e) {
         finish(span, e)
         throw e
@@ -135,6 +145,14 @@ function addError (span, error) {
   }
 
   return error
+}
+
+function isRequestValid (exec, args, length, span) {
+  if (!exec) return false
+  if (args.length !== length || typeof args[length - 1] !== 'function') return false
+  if (!span || span.context()._name !== 'cassandra.query') return false
+
+  return true
 }
 
 function combine (queries) {
