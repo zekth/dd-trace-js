@@ -324,10 +324,11 @@ jobs:
         environment:
           - PLUGINS=dns
 
-  node-edgemicro:
-    <<: *node-plugin-edgemicro
+  node-edgemicro-cli:
     docker:
       - image: gcr.io/apigee-microgateway/edgemicro:latest
+    working_directory: ~/dd-trace-js
+    resource_class: small
     steps:
       - checkout
       - run:
