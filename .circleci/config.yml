@@ -336,8 +336,7 @@ jobs:
       # - run:
       #     name: Patch supported Node modules
       #     command: dd-trace-js patch
-      - run:
-          name: pwd
+      - run: pwd
 
   node-elasticsearch:
     <<: *node-plugin-base
