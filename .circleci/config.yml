@@ -19,8 +19,6 @@ node-core-base: &node-core-base
       run:
         name: Install dependencies
         command: yarn install --ignore-engines
-        environment:
-          DD_NATIVE_METRICS: "false"
     - &save-yarn-cache
       save_cache:
         key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
@@ -65,8 +63,6 @@ node-plugin-base: &node-plugin-base
     - run:
         name: Install dependencies
         command: yarn install
-        environment:
-          DD_NATIVE_METRICS: "false"
     - &save-yarn-cache
       save_cache:
         key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
@@ -327,6 +323,21 @@ jobs:
       - image: node:8
         environment:
           - PLUGINS=dns
+
+  node-edgemicro:
+    <<: *node-plugin-edgemicro
+    docker:
+      - image: gcr.io/apigee-microgateway/edgemicro:latest
+    steps:
+      - checkout
+      - run:
+          name: Link the tracer globally
+          command: yarn link
+      # - run:
+      #     name: Patch supported Node modules
+      #     command: dd-trace-js patch
+      - run:
+          name: pwd
 
   node-elasticsearch:
     <<: *node-plugin-base
@@ -845,56 +856,57 @@ workflows:
   version: 2
   build:
     jobs:
-      - lint
-      - typescript
-      - browser
-      - node-core-8
-      - node-core-10
-      - node-core-12
-      - node-core-latest
-      - node-core-windows
-      - node-bench-latest
-      - node-amqplib
-      - node-amqp10
-      - node-aws-sdk
-      - node-bluebird
-      - node-bunyan
-      - node-cassandra
-      - node-connect
-      - node-couchbase
-      - node-dns
-      - node-elasticsearch
-      - node-express
-      - node-fastify
-      - node-fs-8
-      - node-fs-10
-      - node-fs-12
-      - node-generic-pool
-      - node-google-cloud-pubsub
-      - node-graphql
-      - node-grpc
-      - node-hapi
-      - node-http
-      - node-http2
-      - node-knex
-      - node-koa
-      # - node-limitd-client
-      - node-memcached
-      - node-mongodb-core
-      - node-tedious
-      - node-mysql
-      - node-net
-      - node-paperplane
-      - node-pino
-      - node-postgres
-      - node-promise-js
-      - node-promise
-      - node-q
-      - node-redis
-      - node-restify
-      - node-router
-      - node-when
-      - node-winston
+      # - lint
+      # - typescript
+      # - browser
+      # - node-core-8
+      # - node-core-10
+      # - node-core-12
+      # - node-core-latest
+      # - node-core-windows
+      # - node-bench-latest
+      # - node-amqplib
+      # - node-amqp10
+      # - node-aws-sdk
+      # - node-bluebird
+      # - node-bunyan
+      # - node-cassandra
+      # - node-connect
+      # - node-couchbase
+      # - node-dns
+      - node-edgemicro
+      # - node-elasticsearch
+      # - node-express
+      # - node-fastify
+      # - node-fs-8
+      # - node-fs-10
+      # - node-fs-12
+      # - node-generic-pool
+      # - node-google-cloud-pubsub
+      # - node-graphql
+      # - node-grpc
+      # - node-hapi
+      # - node-http
+      # - node-http2
+      # - node-knex
+      # - node-koa
+      # # - node-limitd-client
+      # - node-memcached
+      # - node-mongodb-core
+      # - node-tedious
+      # - node-mysql
+      # - node-net
+      # - node-paperplane
+      # - node-pino
+      # - node-postgres
+      # - node-promise-js
+      # - node-promise
+      # - node-q
+      # - node-redis
+      # - node-restify
+      # - node-router
+      # - node-when
+      # - node-winston
   prebuild:
     jobs:
       # Linux x64
