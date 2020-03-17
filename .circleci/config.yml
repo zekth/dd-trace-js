@@ -336,7 +336,7 @@ jobs:
           name: Apigee Edge Version
           command: edgemicro --version
       - *restore-yarn-cache
-      - *yarn-istall
+      - *yarn-install
       - *save-yarn-cache
       - run:
           name: Link the tracer globally
