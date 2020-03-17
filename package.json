@@ -5,6 +5,9 @@
   "main": "index.js",
   "browser": "browser.js",
   "typings": "index.d.ts",
+  "bin": {
+    "dd-trace-js": "./bin/dd-trace-js/cli.js"
+  },
   "scripts": {
     "install": "node scripts/postinstall",
     "install:rebuild": "node-gyp-build",
@@ -77,7 +80,8 @@
     "shimmer": "^1.2.0",
     "tar": "^4.4.8",
     "url-parse": "^1.4.3",
-    "whatwg-fetch": "^3.0.0"
+    "whatwg-fetch": "^3.0.0",
+    "yargs": "^15.3.1"
   },
   "devDependencies": {
     "@babel/core": "^7.6.4",
