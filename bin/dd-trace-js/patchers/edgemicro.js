@@ -12,7 +12,8 @@ function patchEdgemicro () {
   }
 
   const original = main.replace(/^(.*)\.js$/, `$1.original.js`)
-  const override = path.join(__dirname, 'edgemicro.tpl.js')
+  const template = path.join(__dirname, 'edgemicro.tpl.js')
+  const override = fs.readFileSync(template)
     .replace('{ORIGINAL}', original)
     .replace('{TRACER}', `${__dirname}/../../..`)
 
@@ -20,7 +21,7 @@ function patchEdgemicro () {
     fs.writeFileSync(original, fs.readFileSync(main))
   }
 
-  fs.writeFileSync(main, fs.readFileSync(override))
+  fs.writeFileSync(main, override)
 }
 
 function getMain () {
