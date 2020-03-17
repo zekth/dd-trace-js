@@ -340,9 +340,9 @@ jobs:
       - *save-yarn-cache
       - run:
           name: Link the tracer globally
-          command: yarn link
+          command: npm link
       - run: echo $PATH
-      - run: which dd-trace-js
+      # - run: which dd-trace-js
       - run:
           name: Patch supported Node modules
           command: dd-trace-js patch
