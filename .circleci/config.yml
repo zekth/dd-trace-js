@@ -327,6 +327,7 @@ jobs:
   node-edgemicro-cli:
     docker:
       - image: gcr.io/apigee-microgateway/edgemicro:latest
+        user: root
     working_directory: ~/dd-trace-js
     resource_class: small
     steps:
