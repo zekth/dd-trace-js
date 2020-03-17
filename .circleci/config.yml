@@ -327,7 +327,7 @@ jobs:
   node-edgemicro-cli:
     docker:
       - image: gcr.io/apigee-microgateway/edgemicro:latest
-        # user: root
+        user: root
     working_directory: ~/dd-trace-js
     resource_class: small
     steps:
@@ -341,7 +341,7 @@ jobs:
       - *save-yarn-cache
       - run:
           name: Link the tracer globally
-          command: sudo npm link
+          command: yarn link
       - run: echo $PATH
       # - run: which dd-trace-js
       - run:
