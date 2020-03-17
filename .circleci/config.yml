@@ -347,31 +347,6 @@ jobs:
       - run: cat $(npm root -g)/edgemicro/index.js
       - run: cat $(npm root -g)/edgemicro/index.original.js
 
-      &yarn-versions
-      run:
-        name: Versions
-        command: yarn versions
-    - &restore-yarn-cache
-      restore_cache:
-        key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
-    - &yarn-install
-      run:
-        name: Install dependencies
-        command: yarn install --ignore-engines
-    - &save-yarn-cache
-      save_cache:
-        key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
-        paths:
-          - ./node_modules
-          - ./yarn.lock
-    - &yarn-rebuild
-      run:
-        name: Compile native code
-        command: yarn rebuild
-    - &yarn-test-core
-
-
-
   node-elasticsearch:
     <<: *node-plugin-base
     docker:
