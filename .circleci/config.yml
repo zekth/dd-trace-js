@@ -342,8 +342,6 @@ jobs:
       - run:
           name: Link the tracer globally
           command: yarn link
-      - run: echo $PATH
-      # - run: which dd-trace-js
       - run:
           name: Patch supported Node modules
           command: dd-trace-js patch
