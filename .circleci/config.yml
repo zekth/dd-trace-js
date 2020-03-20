@@ -875,6 +875,7 @@ workflows:
       # - node-core-12
       # - node-core-latest
       # - node-core-windows
+      - node-cli-edgemicro
       # - node-bench-latest
       # - node-amqplib
       # - node-amqp10
@@ -885,7 +886,6 @@ workflows:
       # - node-connect
       # - node-couchbase
       # - node-dns
-      - node-edgemicro-cli
       # - node-elasticsearch
       # - node-express
       # - node-fastify
