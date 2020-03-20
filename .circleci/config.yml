@@ -259,7 +259,7 @@ jobs:
           command: yarn link
       - run:
           name: Patch supported Node modules
-          command: dd-trace-js patch
+          command: datadog-js patch
       - run: cat $(npm root -g)/edgemicro/index.js
       - run: cat $(npm root -g)/edgemicro/index.original.js
 
