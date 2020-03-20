@@ -6,7 +6,7 @@
   "browser": "browser.js",
   "typings": "index.d.ts",
   "bin": {
-    "dd-trace-js": "./bin/dd-trace-js/cli.js"
+    "dd-trace-js": "./packages/datadog-cli/index.js"
   },
   "scripts": {
     "install": "node scripts/postinstall",
