@@ -5,7 +5,7 @@ const patch = require('../../../../src/commands/patch/patchers/edgemicro')
 
 wrapIt()
 
-const dirname = `${__dirname}/../../../../node_modules/edgemicro/cli/lib`
+const dirname = `${__dirname}/../../../node_modules/edgemicro/cli/lib`
 
 describe('cli/commands/patch/edgemicro', () => {
   afterEach(() => {
@@ -24,7 +24,7 @@ describe('cli/commands/patch/edgemicro', () => {
     const original = fs.readFileSync(`${dirname}/start-agent.original.js`).toString()
 
     expect(unpatched).to.equal(original)
-    expect(patched).to.include('edgemicro')
     expect(patched).to.include('dd-trace')
+    expect(patched).to.include('start-agent')
   })
 })
