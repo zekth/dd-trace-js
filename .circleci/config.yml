@@ -237,6 +237,32 @@ jobs:
       - *yarn-rebuild
       - *yarn-test-core
 
+  # CLI tests
+
+  node-cli-edgemicro:
+    docker:
+      - image: gcr.io/apigee-microgateway/edgemicro:latest
+        user: root
+    working_directory: ~/dd-trace-js
+    resource_class: small
+    steps:
+      - checkout
+      - *yarn-versions
+      - run:
+          name: Apigee Edge Version
+          command: edgemicro --version
+      - *restore-yarn-cache
+      - *yarn-install
+      - *save-yarn-cache
+      - run:
+          name: Link the tracer globally
+          command: yarn link
+      - run:
+          name: Patch supported Node modules
+          command: dd-trace-js patch
+      - run: cat $(npm root -g)/edgemicro/index.js
+      - run: cat $(npm root -g)/edgemicro/index.original.js
+
   # Plugin tests
 
   node-amqplib:
@@ -323,30 +349,6 @@ jobs:
       - image: node:8
         environment:
           - PLUGINS=dns
-
-  node-edgemicro-cli:
-    docker:
-      - image: gcr.io/apigee-microgateway/edgemicro:latest
-        user: root
-    working_directory: ~/dd-trace-js
-    resource_class: small
-    steps:
-      - checkout
-      - *yarn-versions
-      - run:
-          name: Apigee Edge Version
-          command: edgemicro --version
-      - *restore-yarn-cache
-      - *yarn-install
-      - *save-yarn-cache
-      - run:
-          name: Link the tracer globally
-          command: yarn link
-      - run:
-          name: Patch supported Node modules
-          command: dd-trace-js patch
-      - run: cat $(npm root -g)/edgemicro/index.js
-      - run: cat $(npm root -g)/edgemicro/index.original.js
 
   node-elasticsearch:
     <<: *node-plugin-base

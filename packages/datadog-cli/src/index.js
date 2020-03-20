@@ -4,7 +4,7 @@
 
 const yargs = require('yargs')
 
-const patch = require('./patch')
+const patch = require('./commands/patch')
 
 const argv = yargs
   .scriptName('dd-trace-js')
