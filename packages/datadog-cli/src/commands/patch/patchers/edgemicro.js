@@ -20,6 +20,8 @@ function patchEdgemicro () {
   }
 
   fs.writeFileSync(file, override)
+
+  console.log(file, original) // eslint-disable-line
 }
 
 function getMain (name) {
