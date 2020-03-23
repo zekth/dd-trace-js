@@ -256,7 +256,7 @@ jobs:
       - *save-yarn-cache
       - run:
           name: Link the tracer globally
-          command: yarn link
+          command: npm link
       - run:
           name: Patch supported Node modules
           command: datadog-js patch
