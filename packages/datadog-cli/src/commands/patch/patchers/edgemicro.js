@@ -35,6 +35,7 @@ function getMain (name) {
 }
 
 function resolveLocal (name) {
+  console.log(resolve(name))
   return resolve(name)
 }
 
@@ -42,6 +43,8 @@ function resolveGlobal (name) {
   const path = execSync('npm root -g')
     .toString()
     .trim()
+
+  console.log(path)
 
   return resolve(name, [path])
 }

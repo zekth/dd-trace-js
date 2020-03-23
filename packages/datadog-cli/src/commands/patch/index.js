@@ -11,14 +11,15 @@ function patch ({ name }) {
     const patcher = getPatcher(name)
 
     if (!patcher) {
-      return console.log(`Skipping patch "${name}" which could not be found.`)
+      console.log(`Skipping patch "${name}" which could not be found.`)
+      continue
     }
 
     try {
       patcher()
       console.log(`Patched "${name}" successfully.`)
     } catch (e) {
-      console.error(e.message)
+      throw e
     }
   }
 }
