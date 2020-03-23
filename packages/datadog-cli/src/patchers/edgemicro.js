@@ -4,7 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const execSync = require('child_process').execSync
 
-function patchEdgemicro () {
+function patch () {
   const main = getMain('edgemicro')
   const tracer = getMain('dd-trace')
 
@@ -20,12 +20,24 @@ function patchEdgemicro () {
   }
 
   fs.writeFileSync(file, override)
+}
 
-  console.log(file, original) // eslint-disable-line
+function unpatch () {
+  const main = getMain('edgemicro')
+
+  const file = main.replace('/index.js', '/cli/lib/start-agent.js')
+  const original = file.replace('/start-agent.js', '/start-agent.original.js')
+
+  const agent = fs.readFileSync(file).toString()
+
+  if (~agent.indexOf('dd-trace')) {
+    fs.writeFileSync(file, fs.readFileSync(original))
+    fs.unlinkSync(original)
+  }
 }
 
 function getMain (name) {
-  const main = resolveLocal(name) || resolveGlobal(name)
+  const main = resolveCurrent(name) || resolveLocal(name) || resolveGlobal(name)
 
   if (!main) {
     throw new Error(`Could not resolve "${name}". Is it installed at the correct level?`)
@@ -34,8 +46,11 @@ function getMain (name) {
   return main
 }
 
+function resolveCurrent (name) {
+  return resolve(name, [process.cwd()])
+}
+
 function resolveLocal (name) {
-  console.log(resolve(name))
   return resolve(name)
 }
 
@@ -43,8 +58,6 @@ function resolveGlobal (name) {
   const path = execSync('npm root -g')
     .toString()
     .trim()
-
-  console.log(path)
 
   return resolve(name, [path])
 }
@@ -57,4 +70,4 @@ function resolve (name, paths) {
   }
 }
 
-module.exports = patchEdgemicro
+module.exports = { patch, unpatch }

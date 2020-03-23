@@ -260,8 +260,9 @@ jobs:
       - run:
           name: Patch supported Node modules
           command: datadog-js patch
-      - run: cat $(npm root -g)/edgemicro/cli/lib/start-agent.js
-      - run: cat $(npm root -g)/edgemicro/cli/lib/start-agent.original.js
+      - run:
+          name: Check if the patch was applied
+          command: test -f $(npm root -g)/edgemicro/cli/lib/start-agent.original.js
 
   # Plugin tests
 
