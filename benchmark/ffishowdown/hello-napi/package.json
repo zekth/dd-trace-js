@@ -1,0 +1,12 @@
+{
+  "name": "hello-napi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "build/Release/napi.node",
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "author": "",
+  "license": "ISC",
+  "gypfile": true
+}

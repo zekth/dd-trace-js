@@ -1,0 +1,17 @@
+{
+  "name": "hello-ffi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "preinstall": "cd ../hello && make"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ffi-napi": "^2.5.0",
+    "ref-array-di": "^1.2.1",
+    "ref-napi": "^2.0.0",
+    "ref-struct-di": "^1.1.0"
+  }
+}
