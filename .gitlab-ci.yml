@@ -1,0 +1,10 @@
+rel-env-deploy:
+  image: node
+  script:
+    - export RELIABILITY_AWS_ACCESS_KEY_ID=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-js.secret_key_id --with-decryption --query "Parameter.Value" --out text)
+    - export RELIABILITY_AWS_SECRET_ACCESS_KEY=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-js.secret_sec_key_id --with-decryption --query "Parameter.Value" --out text)
+    - npm install --only=dev
+    - node scripts/deploy_reliability.js
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "testing"'
+      when: always
