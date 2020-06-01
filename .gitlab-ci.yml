@@ -1,0 +1,4 @@
+rel-env-deploy:
+  image: node
+  script:
+    - node -p 'worked'
