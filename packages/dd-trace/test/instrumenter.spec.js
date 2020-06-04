@@ -55,7 +55,7 @@ describe('Instrumenter', () => {
     shimmer.massUnwrap = sinon.spy()
 
     Instrumenter = proxyquire('../src/instrumenter', {
-      'shimmer': shimmer,
+      './shimmer': shimmer,
       './platform': {
         plugins: {
           'http': integrations.http,
@@ -412,7 +412,7 @@ describe('Instrumenter', () => {
       process.env.DD_TRACE_DISABLED_PLUGINS = 'http,mysql-mock'
 
       Instrumenter = proxyquire('../src/instrumenter', {
-        'shimmer': shimmer,
+        './shimmer': shimmer,
         './platform': {
           plugins: {
             'http': integrations.http,

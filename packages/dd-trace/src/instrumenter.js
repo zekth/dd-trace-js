@@ -1,10 +1,8 @@
 'use strict'
 
-const shimmer = require('shimmer')
+const shimmer = require('./shimmer')
 const log = require('./log')
 const platform = require('./platform')
-
-shimmer({ logger: () => {} })
 
 const plugins = platform.plugins
 

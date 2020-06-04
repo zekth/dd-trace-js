@@ -1,11 +1,13 @@
 'use strict'
 
+const { syncBuiltinESMExports } = require('module')
 const semver = require('semver')
 const hook = require('require-in-the-middle')
 const parse = require('module-details-from-path')
 const path = require('path')
 const uniq = require('lodash.uniq')
 const log = require('../../log')
+const { registerModuleNamespace } = require('../../shimmer')
 
 const pathSepExpr = new RegExp(`\\${path.sep}`, 'g')
 
@@ -108,7 +110,16 @@ class Loader {
         }
       })
 
+    if (syncBuiltinESMExports) {
+      syncBuiltinESMExports()
+    }
+
     return moduleExports
+  }
+
+  _registerESM (name, namespace, setExport) {
+    registerModuleNamespace(namespace, setExport)
+    this._hookModule(namespace, name)
   }
 
   _validate (plugin, moduleName, moduleBaseDir, moduleVersion) {
