@@ -6,5 +6,6 @@ module.exports = {
   TEXT_MAP: opentracing.FORMAT_TEXT_MAP,
   HTTP_HEADERS: opentracing.FORMAT_HTTP_HEADERS,
   BINARY: opentracing.FORMAT_BINARY,
-  LOG: 'log'
+  LOG: 'log',
+  W3C: 'w3c'
 }

@@ -21,7 +21,9 @@ class Sqs {
         response.Messages[0]
       ) {
         const msg = response.Messages[0]
-        return tracer.extract('text_map', JSON.parse(msg.MessageAttributes._datadog.StringValue))
+        return tracer.extract('w3c', {
+          traceparent: msg.MessageAttributes._datadog.StringValue
+        })
       }
     }
   }
@@ -36,10 +38,10 @@ class Sqs {
         request.params.MessageAttributes = {}
       }
       const ddInfo = {}
-      tracer.inject(span, 'text_map', ddInfo)
+      tracer.inject(span._spanContext, 'w3c', ddInfo)
       request.params.MessageAttributes._datadog = {
         DataType: 'String',
-        StringValue: JSON.stringify(ddInfo)
+        StringValue: ddInfo.traceparent
       }
     }
   }

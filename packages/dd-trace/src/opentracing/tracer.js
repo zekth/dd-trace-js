@@ -12,6 +12,7 @@ const TextMapPropagator = require('./propagation/text_map')
 const HttpPropagator = require('./propagation/http')
 const BinaryPropagator = require('./propagation/binary')
 const LogPropagator = require('./propagation/log')
+const W3CPropagator = require('./propagation/w3c')
 const NoopSpan = require('../noop/span')
 const formats = require('../../../../ext/formats')
 
@@ -48,7 +49,8 @@ class DatadogTracer extends Tracer {
       [formats.TEXT_MAP]: new TextMapPropagator(config),
       [formats.HTTP_HEADERS]: new HttpPropagator(config),
       [formats.BINARY]: new BinaryPropagator(),
-      [formats.LOG]: new LogPropagator()
+      [formats.LOG]: new LogPropagator(),
+      [formats.W3C]: new W3CPropagator()
     }
     if (config.reportHostname) {
       this._hostname = platform.hostname()
