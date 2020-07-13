@@ -6,6 +6,7 @@ const upload = require('multer')()
 const os = require('os')
 const path = require('path')
 const getPort = require('get-port')
+const nock = require('nock')
 const { gunzipSync } = require('zlib')
 const { perftools } = require('../../../../../protobuf/profile')
 const { Profile } = require('../../../src/profiling/profile')
@@ -50,6 +51,10 @@ describe('exporters/agent', () => {
     afterEach(done => {
       listener.close(done)
       sockets.forEach(socket => socket.end())
+
+      nock.cleanAll()
+      nock.enableNetConnect()
+      nock.restore()
     })
 
     it('should send profiles as pprof to the intake', done => {
@@ -102,6 +107,31 @@ describe('exporters/agent', () => {
       })
 
       exporter.export({ profiles, start, end, tags })
+        .catch(done)
+    })
+
+    it('should timeout when no response is received', done => {
+      const exporter = new AgentExporter({ url })
+      const start = new Date()
+      const end = new Date()
+      const tags = { foo: 'bar' }
+      const profiles = {
+        cpu: createProfile(['wall', 'microseconds']),
+        heap: createProfile(['space', 'bytes'])
+      }
+
+      nock.activate()
+      nock(url)
+        .post('/profiling/v1/input')
+        .delayConnection(10001)
+        .reply(200)
+
+      exporter.export({ profiles, start, end, tags })
+        .then(() => done(new Error('timeout expected but got a reply')))
+        .catch((e) => {
+          expect(e.message).to.include('timeout', 'exceeded')
+          done()
+        })
         .catch(done)
     })
   })
