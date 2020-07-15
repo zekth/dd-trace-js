@@ -32,18 +32,20 @@ if (!process.channel) {
     const proc = new Process()
     const trace = new Trace()
     const span1 = new Span({ trace })
-    span1.setName('span1')
-    span1.setService('service1')
-    span1.setType('type1')
-    span1.setResource('resource1')
+    span1.name = 'span1'
+    span1.service = 'service1'
+    span1.type = 'type1'
+    span1.resource = 'resource1'
     span1.addMeta('meta1', 'hello')
     const span2 = new Span({ trace, parent: span1 })
-    span2.setName('span2')
-    span2.setService('service2')
-    span2.setType('type2')
-    span2.setResource('resource2')
+    span2.name = 'span2'
+    span2.service = 'service2'
+    span2.type = 'type2'
+    span2.resource = 'resource2'
     span2.addMetric('metric1', 1337.5)
-    span2.setError(true)
+    span2.error = true
+    span1.finish()
+    span2.finish()
     logAndSend(writer, proc)
     logAndSend(writer, trace)
     logAndSend(writer, span1)

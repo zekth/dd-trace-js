@@ -17,7 +17,7 @@ function makeInstance (Type, typeName, decoder, buf) {
   const dv = new DataView(buf.buffer, buf.offset, Type.BYTE_LENGTH)
   Object.setPrototypeOf(dv, Type.prototype)
   if (decoder.seen[typeName]) {
-    decoder.seen[typeName][dv.getId().toString()] = dv
+    decoder.seen[typeName][dv.id.toString()] = dv
   }
   decoder.lastObject = dv
   return Type.BYTE_LENGTH

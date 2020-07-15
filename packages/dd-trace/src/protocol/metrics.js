@@ -3,7 +3,6 @@
 const strings = require('./strings')
 
 const utils = require('./utils')
-const util = require('util')
 
 class Metrics extends DataView {
   constructor () {
@@ -31,7 +30,7 @@ class Metrics extends DataView {
     return this.getUint8(2)
   }
 
-  [util.inspect.custom] () {
+  [Symbol.for('nodejs.util.inspect.custom')] () {
     const obj = {}
     const len = this.getCurrentLen()
     for (let i = 0; i < len; i++) {
