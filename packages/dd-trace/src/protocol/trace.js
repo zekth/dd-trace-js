@@ -8,8 +8,8 @@ const util = require('util')
 
 class Trace extends DataView {
   constructor (traceId) {
-    const ab = new ArrayBuffer(18)
-    super(ab)
+    const offset = utils.alloc(Trace.BYTE_LENGTH)
+    super(utils.bufferPool, offset, Trace.BYTE_LENGTH)
     this.setUint16(0, 0xdd01) // object type
     this.setBigUint64(2, traceId || utils.id())
   }

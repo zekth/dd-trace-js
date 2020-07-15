@@ -15,7 +15,7 @@ class Writer {
   }
 
   write (datum) {
-    this.netClient.write(new Uint8Array(datum.buffer))
+    this.netClient.write(new Uint8Array(datum.buffer, datum.byteOffset, datum.byteLength))
     if (datum.metas) {
       this.write(datum.metas)
     }

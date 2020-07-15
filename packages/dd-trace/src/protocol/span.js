@@ -9,8 +9,8 @@ const util = require('util')
 
 class Span extends DataView {
   constructor ({ trace, parent, spanId }) {
-    const ab = new ArrayBuffer(2 + 80 + 1)
-    super(ab)
+    const offset = utils.alloc(Span.BYTE_LENGTH)
+    super(utils.bufferPool, offset, Span.BYTE_LENGTH)
     this.setUint16(0, 0xdd02) // object type
     this.setTraceId(trace.getId())
     if (parent) this.setParentId(parent.getId())

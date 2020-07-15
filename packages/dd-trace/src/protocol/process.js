@@ -3,12 +3,13 @@
 const Metas = require('./metas')
 const Metrics = require('./metrics')
 
+const utils = require('./utils')
 const util = require('util')
 
 class Process extends DataView {
   constructor () {
-    const ab = new ArrayBuffer(14)
-    super(ab)
+    const offset = utils.alloc(Process.BYTE_LENGTH)
+    super(utils.bufferPool, offset, Process.BYTE_LENGTH)
     this.setUint16(0, 0xdd00) // object type
     this.setUint32(2, 0x00000001) // protocol version
     this.setBigUint64(6, 1024n) // string cache size
