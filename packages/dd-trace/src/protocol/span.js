@@ -3,11 +3,8 @@
 const ProtocolBase = require('./base')
 const utils = require('./utils')
 
-const performanceNow = require('performance-now')
-const loadNs = performanceNow()
-const loadMs = Date.now()
 function now () {
-  return BigInt(Math.floor(loadMs + performanceNow() - loadNs))
+  return process.hrtime.bigint()
 }
 
 class Span extends ProtocolBase {
@@ -16,11 +13,12 @@ class Span extends ProtocolBase {
     this.traceId = trace.id
     if (parent) this.parentId = parent.id
     this.id = spanId || utils.id()
-    this.start = now()
+    this.start = BigInt(Date.now()) * 1000n
+    this._start = now()
   }
 
   finish () {
-    this.duration = now() - this.start
+    this.duration = now() - this._start
   }
 }
 

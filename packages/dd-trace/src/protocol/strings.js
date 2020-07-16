@@ -9,8 +9,8 @@ let cache
 let revCache
 
 function init (max) {
-  cache = new LRUCache(max)
-  revCache = new LRUCache(max)
+  cache = new LRUCache(Array, BigUint64Array, max)
+  revCache = new LRUCache(BigUint64Array, Array, max)
 }
 exports.init = init
 
