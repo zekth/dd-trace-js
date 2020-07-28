@@ -19,6 +19,7 @@ class Span extends ProtocolBase {
 
   finish () {
     this.duration = now() - this._start
+    delete this._start
   }
 }
 

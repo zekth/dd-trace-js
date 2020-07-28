@@ -6,6 +6,9 @@ const Metrics = require('./metrics')
 const utils = require('./utils')
 const strings = require('./strings')
 
+const configurable = true
+const enumerable = true
+
 function sizeOf (type) {
   return Number(type.replace(/.*nt/, '')) / 8
 }
@@ -44,45 +47,36 @@ class ProtocolBase extends DataView {
     for (const key in accessorList) {
       const valType = accessorList[key]
       const valOffset = offset
+      let get
+      let set
       if (valType === 'string') {
-        Object.defineProperty(this.prototype, key, {
-          get () {
-            return strings.revGet(this.getBigUint64(valOffset))
-          },
-          set (val) {
-            this.setBigUint64(valOffset, strings.get(val))
-          },
-          enumerable: true,
-          configurable: true
-        })
+        get = function () {
+          return strings.revGet(this.getBigUint64(valOffset))
+        }
+        set = function (val) {
+          this.setBigUint64(valOffset, strings.get(val))
+        }
         offset += 8
       } else if (valType === 'bool') {
-        Object.defineProperty(this.prototype, key, {
-          get () {
-            return !!this.getUint8(valOffset)
-          },
-          set (val) {
-            this.setUint8(valOffset, val ? 1 : 0)
-          },
-          enumerable: true,
-          configurable: true
-        })
+        get = function () {
+          return !!this.getUint8(valOffset)
+        }
+        set = function (val) {
+          this.setUint8(valOffset, val ? 1 : 0)
+        }
         offset += 1
       } else {
         const getterName = 'get' + valType
         const setterName = 'set' + valType
-        Object.defineProperty(this.prototype, key, {
-          get () {
-            return this[getterName](valOffset)
-          },
-          set (val) {
-            this[setterName](valOffset, val)
-          },
-          enumerable: true,
-          configurable: true
-        })
+        get = function () {
+          return this[getterName](valOffset)
+        }
+        set = function (val) {
+          this[setterName](valOffset, val)
+        }
         offset += sizeOf(valType)
       }
+      Object.defineProperty(this.prototype, key, { get, set, enumerable, configurable })
       if (
         (this.constructor.name === 'Trace' && key === 'id') ||
         key === 'traceId'
