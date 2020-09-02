@@ -1,5 +1,7 @@
 'use strict'
 
+require('./setup/core')
+
 const ANALYTICS = require('../../../ext/tags').ANALYTICS
 
 describe('analyticsSampler', () => {

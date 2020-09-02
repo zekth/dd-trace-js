@@ -1,5 +1,7 @@
 'use strict'
 
+require('../../setup/core')
+
 const URL = require('url-parse')
 
 const id = require('../../../src/id')

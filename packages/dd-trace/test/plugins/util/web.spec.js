@@ -1,5 +1,7 @@
 'use strict'
 
+require('../../setup/core')
+
 const getPort = require('get-port')
 const agent = require('../agent')
 const types = require('../../../../../ext/types')

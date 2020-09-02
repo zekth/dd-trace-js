@@ -1,5 +1,7 @@
 'use strict'
 
+require('../setup/core')
+
 const msgpack = require('msgpack-lite')
 const codec = msgpack.createCodec({ int64: true })
 const id = require('../../src/id')
@@ -9,7 +11,9 @@ describe('encode', () => {
   let encode
 
   beforeEach(() => {
-    encode = require('../../src/encode/0.4').encode
+    const encoder = require('../../src/encode/0.4')
+    encoder.init()
+    encode = encoder.encode
   })
 
   it('should encode to msgpack', () => {

@@ -1,5 +1,7 @@
 'use strict'
 
+require('../../setup/core')
+
 describe('Exporter', () => {
   let url
   let flushInterval

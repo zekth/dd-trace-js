@@ -1,5 +1,7 @@
 'use strict'
 
+require('./setup/core')
+
 const express = require('express')
 const bodyParser = require('body-parser')
 const getPort = require('get-port')

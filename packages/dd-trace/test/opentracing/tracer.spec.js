@@ -1,5 +1,7 @@
 'use strict'
 
+require('../setup/core')
+
 const opentracing = require('opentracing')
 const SpanContext = require('../../src/opentracing/span_context')
 const Reference = opentracing.Reference

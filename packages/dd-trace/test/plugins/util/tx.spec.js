@@ -1,5 +1,7 @@
 'use strict'
 
+require('../../setup/core')
+
 describe('plugins/util/tx', () => {
   let tx
   let tracer

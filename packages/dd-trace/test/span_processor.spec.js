@@ -1,3 +1,6 @@
+'use strict'
+
+require('./setup/core')
 
 describe('SpanProcessor', () => {
   let prioritySampler

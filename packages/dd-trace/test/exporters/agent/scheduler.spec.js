@@ -1,5 +1,7 @@
 'use strict'
 
+require('../../setup/core')
+
 const EventEmitter = require('eventemitter3')
 const proxyquire = require('proxyquire').noCallThru()
 

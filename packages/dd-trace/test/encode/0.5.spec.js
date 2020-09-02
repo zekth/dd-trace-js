@@ -1,5 +1,7 @@
 'use strict'
 
+require('../setup/core')
+
 const msgpack = require('msgpack-lite')
 const platform = require('../../src/platform')
 const codec = msgpack.createCodec({ int64: true })

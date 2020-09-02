@@ -1,5 +1,7 @@
 'use strict'
 
+require('./setup/core')
+
 describe('Config', () => {
   let Config
   let platform
