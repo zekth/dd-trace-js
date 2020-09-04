@@ -92,18 +92,19 @@ function wrapNext (layer, req, next) {
 }
 
 function callHandle (layer, handle, req, args) {
-  const matchers = layer._datadog_matchers
+  
+  // const matchers = layer._datadog_matchers
 
-  if (web.active(req) && matchers) {
-    // Try to guess which path actually matched
-    for (let i = 0; i < matchers.length; i++) {
-      if (matchers[i].test(layer)) {
-        web.enterRoute(req, matchers[i].path)
+  // if (web.active(req) && matchers) {
+  //   // Try to guess which path actually matched
+  //   for (let i = 0; i < matchers.length; i++) {
+  //     if (matchers[i].test(layer)) {
+  //       web.enterRoute(req, matchers[i].path)
 
-        break
-      }
-    }
-  }
+  //       break
+  //     }
+  //   }
+  // }
 
   return web.wrapMiddleware(req, handle, 'express.middleware', () => {
     return handle.apply(layer, args)
