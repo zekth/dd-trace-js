@@ -116,20 +116,6 @@ module.exports = [
   {
     name: 'router',
     versions: ['>=1'],
-    patch (Router, tracer, config) {
-      this.wrap(Router.prototype, 'handle', createWrapHandle(tracer, config))
-      this.wrap(Router.prototype, 'use', wrapRouterMethod)
-      this.wrap(Router.prototype, 'route', wrapRouterMethod)
-    },
-    unpatch (Router) {
-      this.unwrap(Router.prototype, 'handle')
-      this.unwrap(Router.prototype, 'use')
-      this.unwrap(Router.prototype, 'route')
-    }
-  },
-  {
-    name: 'router',
-    versions: ['>=1'],
     file: 'lib/layer.js',
     patch (Layer) {
       return this.wrapExport(Layer, function (...args) {
@@ -140,6 +126,20 @@ module.exports = [
     },
     unpatch (Layer) {
       return this.unwrapExport(Layer)
+    }
+  },
+  {
+    name: 'router',
+    versions: ['>=1'],
+    patch (Router, tracer, config) {
+      this.wrap(Router.prototype, 'handle', createWrapHandle(tracer, config))
+      this.wrap(Router.prototype, 'use', wrapRouterMethod)
+      this.wrap(Router.prototype, 'route', wrapRouterMethod)
+    },
+    unpatch (Router) {
+      this.unwrap(Router.prototype, 'handle')
+      this.unwrap(Router.prototype, 'use')
+      this.unwrap(Router.prototype, 'route')
     }
   }
 ]

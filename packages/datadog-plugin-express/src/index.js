@@ -1,7 +1,7 @@
 'use strict'
 
 const web = require('../../dd-trace/src/plugins/util/web')
-const routerPlugin = require('../../datadog-plugin-router/src')
+const [layerPlugin, routerPlugin] = require('../../datadog-plugin-router/src')
 
 function createWrapHandle (tracer, config) {
   config = web.normalizeConfig(config)
@@ -25,9 +25,16 @@ function unpatch (express) {
   routerPlugin.unpatch.call(this, { prototype: express.Router })
 }
 
-module.exports = {
-  name: 'express',
-  versions: ['>=4'],
-  patch,
-  unpatch
-}
+module.exports = [
+  Object.assign({}, layerPlugin, {
+    name: 'express',
+    versions: ['>=4'],
+    file: 'lib/router/layer.js'
+  }),
+  {
+    name: 'express',
+    versions: ['>=4'],
+    patch,
+    unpatch
+  }
+]
