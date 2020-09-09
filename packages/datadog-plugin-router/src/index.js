@@ -76,7 +76,7 @@ function wrapNext (layer, req, next) {
   const originalNext = next
 
   return function (error) {
-    if (!error && layer.path && !isFastStar(layer) && !isFastSlash(layer)) {
+    if (!error && layer.path) {
       web.exitRoute(req)
     }
 
@@ -87,7 +87,7 @@ function wrapNext (layer, req, next) {
 }
 
 function callHandle (layer, handle, req, args) {
-  if (layer._datadog_path) {
+  if (layer.path && layer._datadog_path && web.active(req)) {
     web.enterRoute(req, layer._datadog_path)
   }
 
@@ -96,20 +96,8 @@ function callHandle (layer, handle, req, args) {
   })
 }
 
-function isFastStar (layer) {
-  if (layer.regexp.fast_star !== undefined) {
-    return layer.regexp.fast_star
-  }
-
-  return layer._datadog_path === '*'
-}
-
-function isFastSlash (layer) {
-  if (layer.regexp.fast_slash !== undefined) {
-    return layer.regexp.fast_slash
-  }
-
-  return layer._datadog_path === '/'
+function getFirstElementOfArray (arr) {
+  return Array.isArray(arr) ? getFirstElementOfArray(arr[0]) : arr
 }
 
 module.exports = [
@@ -120,7 +108,8 @@ module.exports = [
     patch (Layer) {
       return this.wrapExport(Layer, function (...args) {
         const layer = new Layer(...args)
-        layer._datadog_path = args[0]
+        const firstArg = getFirstElementOfArray(args[0])
+        layer._datadog_path = firstArg instanceof RegExp ? `(${firstArg})` : firstArg
         return layer
       })
     },
