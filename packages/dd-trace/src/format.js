@@ -12,6 +12,8 @@ const MEASURED = tags.MEASURED
 const ORIGIN_KEY = constants.ORIGIN_KEY
 const HOSTNAME_KEY = constants.HOSTNAME_KEY
 
+const ID_ZERO = id('0')
+
 const map = {
   'service.name': 'service',
   'span.type': 'type',
@@ -31,12 +33,17 @@ function format (span) {
 function formatSpan (span) {
   const spanContext = span.context()
 
+  let name = spanContext._name
+  if (typeof name !== 'string') {
+    name = serialize(name)
+  }
+
   return {
     trace_id: spanContext._traceId,
     span_id: spanContext._spanId,
-    parent_id: spanContext._parentId || id('0'),
-    name: serialize(spanContext._name),
-    resource: serialize(spanContext._name),
+    parent_id: spanContext._parentId || ID_ZERO,
+    name,
+    resource: name,
     error: 0,
     meta: {},
     metrics: {},
@@ -56,19 +63,29 @@ function extractTags (trace, span) {
     switch (tag) {
       case 'service.name':
       case 'span.type':
-      case 'resource.name':
-        addTag(trace, {}, map[tag], tags[tag])
+      case 'resource.name': {
+        const val = tags[tag]
+        if (typeof val === 'string') {
+          trace[tag] = val
+        }
         break
+      }
       // HACK: remove when Datadog supports numeric status code
-      case 'http.status_code':
-        addTag(trace.meta, {}, tag, tags[tag] && String(tags[tag]))
+      case 'http.status_code': {
+        const val = tags[tag]
+        if (val) {
+          trace.meta[tag] = String(tags[tag])
+        }
         break
+      }
       case HOSTNAME_KEY:
       case ANALYTICS:
         break
-      case MEASURED:
-        addTag({}, trace.metrics, tag, tags[tag] === undefined || tags[tag] ? 1 : 0)
+      case MEASURED: {
+        const val = tags[tag]
+        trace.metrics[tag] = val === undefined || val ? 1 : 0
         break
+      }
       case 'error':
         if (tags[tag] && tags['span.kind'] !== 'internal') {
           trace.error = 1
@@ -87,12 +104,18 @@ function extractTags (trace, span) {
   }
 
   if (span.tracer()._service === tags['service.name']) {
-    addTag(trace.meta, trace.metrics, 'language', 'javascript')
+    trace.metrics.language = 'javascript'
   }
 
-  addTag(trace.meta, trace.metrics, SAMPLING_PRIORITY_KEY, priority)
-  addTag(trace.meta, trace.metrics, ORIGIN_KEY, origin)
-  addTag(trace.meta, trace.metrics, HOSTNAME_KEY, hostname)
+  if (typeof priority === 'number') {
+    trace.metrics[SAMPLING_PRIORITY_KEY] = priority
+  }
+  if (origin) {
+    trace.meta[ORIGIN_KEY] = origin
+  }
+  if (hostname) {
+    trace.meta[HOSTNAME_KEY] = hostname
+  }
 }
 
 function extractError (trace, span) {
@@ -115,7 +138,12 @@ function extractAnalytics (trace, span) {
   }
 
   if (!isNaN(analytics)) {
-    trace.metrics[ANALYTICS_KEY] = Math.max(Math.min(analytics, 1), 0)
+    if (analytics > 1) {
+      analytics = 1
+    } else if (analytics < 0) {
+      analytics = 0
+    }
+    trace.metrics[ANALYTICS_KEY] = analytics
   }
 }
 

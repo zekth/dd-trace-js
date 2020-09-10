@@ -346,15 +346,20 @@ function reactivate (req, fn) {
 }
 
 function addRequestTags (req) {
-  const url = extractURL(req)
+  let url = extractURL(req)
   const span = req._datadog.span
 
-  span.addTags({
-    [HTTP_URL]: url.split('?')[0],
-    [HTTP_METHOD]: req.method,
-    [SPAN_KIND]: SERVER,
-    [SPAN_TYPE]: WEB
-  })
+  const tags = span._context()._tags
+
+  const questionMarkIndex = url.indexOf('?')
+  if (questionMarkIndex >= 0) {
+    url = url.substring(0, questionMarkIndex)
+  }
+
+  tags[HTTP_URL] = url
+  tags[HTTP_METHOD] = req.method
+  tags[SPAN_KIND] = SERVER
+  tags[SPAN_TYPE] = WEB
 
   addHeaders(req)
 }
@@ -362,14 +367,13 @@ function addRequestTags (req) {
 function addResponseTags (req) {
   const span = req._datadog.span
   const res = req._datadog.res
+  const tags = span._context()._tags
 
   if (req._datadog.paths.length > 0) {
-    span.setTag(HTTP_ROUTE, req._datadog.paths.join(''))
+    tags[HTTP_ROUTE] = req._datadog.paths.join('')
   }
 
-  span.addTags({
-    [HTTP_STATUS_CODE]: res.statusCode
-  })
+  tags[HTTP_STATUS_CODE] = res.statusCode
 
   web.addStatusError(req, res.statusCode)
 }
@@ -378,31 +382,32 @@ function addResourceTag (req) {
   const span = req._datadog.span
   const tags = span.context()._tags
 
-  if (tags['resource.name']) return
+  if (tags[RESOURCE_NAME]) return
 
   const resource = [req.method]
     .concat(tags[HTTP_ROUTE])
     .filter(val => val)
     .join(' ')
 
-  span.setTag(RESOURCE_NAME, resource)
+  tags[RESOURCE_NAME] = resource
 }
 
 function addHeaders (req) {
   const span = req._datadog.span
+  const tags = span._context()._tags
 
-  req._datadog.config.headers.forEach(key => {
+  for (const key of req._datadog.config.headers) {
     const reqHeader = req.headers[key]
     const resHeader = req._datadog.res.getHeader(key)
 
     if (reqHeader) {
-      span.setTag(`${HTTP_REQUEST_HEADERS}.${key}`, reqHeader)
+      tags[`${HTTP_REQUEST_HEADERS}.${key}`] = reqHeader
     }
 
     if (resHeader) {
-      span.setTag(`${HTTP_RESPONSE_HEADERS}.${key}`, resHeader)
+      tags[`${HTTP_RESPONSE_HEADERS}.${key}`] = resHeader
     }
-  })
+  }
 }
 
 function extractURL (req) {
