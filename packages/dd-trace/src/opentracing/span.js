@@ -116,7 +116,11 @@ class DatadogSpan extends Span {
       return
     }
 
-    finishTime = parseFloat(finishTime) || this._getTime()
+    if (finishTime) {
+      finishTime = parseFloat(finishTime) || this._getTime()
+    } else {
+      finishTime = this._getTime()
+    }
 
     this._duration = finishTime - this._startTime
     this._spanContext._trace.finished.push(this)
