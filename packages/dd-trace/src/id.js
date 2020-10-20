@@ -1,5 +1,6 @@
 'use strict'
 
+const wasmRandom = require('./id/wasm-random')
 const platform = require('./platform')
 
 const UINT_MAX = 4294967296
@@ -48,7 +49,8 @@ class Identifier {
 // Create a buffer, using an optional hexadecimal value if provided.
 function createBuffer (value) {
   if (value === '0') return zeroId
-  if (!value) return pseudoRandom()
+  if (!value) return wasmRandom()
+  // if (!value) return pseudoRandom()
 
   const size = Math.ceil(value.length / 2)
   const buffer = new Uint8Array(size)

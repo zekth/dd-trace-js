@@ -52,6 +52,7 @@
     "node": ">=8"
   },
   "dependencies": {
+    "@assemblyscript/loader": "^0.16.1",
     "@types/node": "^10.12.18",
     "axios": "^0.19.2",
     "container-info": "^1.0.1",
