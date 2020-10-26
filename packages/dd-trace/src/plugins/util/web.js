@@ -102,9 +102,7 @@ const web = {
 
     const span = tracer.startSpan(name, { childOf })
 
-    span.addTags({
-      [RESOURCE_NAME]: middleware._name || middleware.name || '<anonymous>'
-    })
+    span.context()._tags[RESOURCE_NAME] = middleware._name || middleware.name || '<anonymous>'
 
     req._datadog.middleware.push(span)
 
@@ -357,13 +355,12 @@ function reactivate (req, fn) {
 function addRequestTags (req) {
   const url = extractURL(req)
   const span = req._datadog.span
+  const tags = span.context()._tags
 
-  span.addTags({
-    [HTTP_URL]: url.split('?')[0],
-    [HTTP_METHOD]: req.method,
-    [SPAN_KIND]: SERVER,
-    [SPAN_TYPE]: WEB
-  })
+  tags[HTTP_URL] = url
+  tags[HTTP_METHOD] = req.method
+  tags[SPAN_KIND] = SERVER
+  tags[SPAN_TYPE] = WEB
 
   addHeaders(req)
 }
@@ -371,14 +368,17 @@ function addRequestTags (req) {
 function addResponseTags (req) {
   const span = req._datadog.span
   const res = req._datadog.res
+  const tags = span.context()._tags
 
   if (req._datadog.paths.length > 0) {
-    span.setTag(HTTP_ROUTE, req._datadog.paths.join(''))
+    let route = ''
+    for (const path of req._datadog.paths) {
+      route += path
+    }
+    tags[HTTP_ROUTE] = route
   }
 
-  span.addTags({
-    [HTTP_STATUS_CODE]: res.statusCode
-  })
+  tags[HTTP_STATUS_CODE] = res.statusCode
 
   web.addStatusError(req, res.statusCode)
 }
@@ -387,30 +387,43 @@ function addResourceTag (req) {
   const span = req._datadog.span
   const tags = span.context()._tags
 
-  if (tags['resource.name']) return
+  if (tags[RESOURCE_NAME]) return
 
-  const resource = [req.method, tags[HTTP_ROUTE]]
-    .filter(val => val)
-    .join(' ')
+  const method = req.method
+  const route = tags[HTTP_ROUTE]
 
-  span.setTag(RESOURCE_NAME, resource)
+  if (method && route) {
+    tags[RESOURCE_NAME] = `${method} ${route}`
+  } else if (method) {
+    tags[RESOURCE_NAME] = method
+  } else if (route) {
+    tags[RESOURCE_NAME] = route
+  } else {
+    tags[RESOURCE_NAME] = ''
+  }
 }
 
 function addHeaders (req) {
+  const configHeaders = req._datadog.config.headers
+  if (!configHeaders.length) {
+    return
+  }
   const span = req._datadog.span
+  const tags = span.context()._tags
+  const res = req._datadog.res
 
-  req._datadog.config.headers.forEach(key => {
+  for (const key of configHeaders) {
     const reqHeader = req.headers[key]
-    const resHeader = req._datadog.res.getHeader(key)
+    const resHeader = res.headers[key]
 
     if (reqHeader) {
-      span.setTag(`${HTTP_REQUEST_HEADERS}.${key}`, reqHeader)
+      tags[`${HTTP_REQUEST_HEADERS}.${key}`] = reqHeader
     }
 
     if (resHeader) {
-      span.setTag(`${HTTP_RESPONSE_HEADERS}.${key}`, resHeader)
+      tags[`${HTTP_RESPONSE_HEADERS}.${key}`] = resHeader
     }
-  })
+  }
 }
 
 function extractURL (req) {
@@ -419,8 +432,13 @@ function extractURL (req) {
   if (req.stream) {
     return `${headers[HTTP2_HEADER_SCHEME]}://${headers[HTTP2_HEADER_AUTHORITY]}${headers[HTTP2_HEADER_PATH]}`
   } else {
-    const protocol = req.connection.encrypted ? 'https' : 'http'
-    return `${protocol}://${req.headers['host']}${req.originalUrl || req.url}`
+    const protocol = req.socket.encrypted ? 'https' : 'http'
+    let path = req.originalUrl || req.url
+    const qIndex = path.indexOf('?')
+    if (qIndex > -1) {
+      path = path.substring(0, qIndex)
+    }
+    return `${protocol}://${headers.host}${path}`
   }
 }
 
