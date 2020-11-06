@@ -3,18 +3,23 @@
 const platform = require('../../platform')
 const log = require('../../log')
 const tracerVersion = require('../../../lib/version')
+const Config = require('../../config')
 
 const METRIC_PREFIX = 'datadog.tracer.node.exporter.agent'
 
 class Writer {
-  constructor ({ url, prioritySampler, lookup, protocolVersion }) {
-    const AgentEncoder = getEncoder(protocolVersion)
-
-    this._url = url
+  constructor (prioritySampler) {
     this._prioritySampler = prioritySampler
-    this._lookup = lookup
-    this._protocolVersion = protocolVersion
-    this._encoderForVersion = new AgentEncoder(this)
+
+    Config.retroOn('update', ({ url, lookup, protocolVersion }) => {
+      this._url = url
+      this._lookUp = lookup
+      if (this._protocolVerison !== protocolVersion) {
+        this._protocolVersion = protocolVersion
+        const AgentEncoder = getEncoder(protocolVersion)
+        this._encoderForVersion = new AgentEncoder(this)
+      }
+    })
   }
 
   append (spans) {
@@ -54,10 +59,6 @@ class Writer {
         platform.metrics().increment(`${METRIC_PREFIX}.errors.by.name`, `name:${e.name}`, true)
       }
     })
-  }
-
-  setUrl (url) {
-    this._url = url
   }
 
   _encode (trace) {
