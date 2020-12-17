@@ -566,7 +566,7 @@ jobs:
   node-oracledb:
     <<: *node-plugin-base
     docker:
-      - image: node:10
+      - image: node:14
         environment:
           - SERVICES=oracledb
           - PLUGINS=oracledb
