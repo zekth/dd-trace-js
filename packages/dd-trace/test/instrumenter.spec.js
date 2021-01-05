@@ -5,7 +5,7 @@ const path = require('path')
 const shimmer = require('shimmer')
 const { expect } = require('chai')
 
-describe('Instrumenter', () => {
+describe.only('Instrumenter', () => {
   let Instrumenter
   let instrumenter
   let integrations
@@ -84,6 +84,8 @@ describe('Instrumenter', () => {
       .forEach(name => {
         delete require.cache[name]
       })
+
+    config.reset()
   })
 
   describe('with integrations enabled', () => {

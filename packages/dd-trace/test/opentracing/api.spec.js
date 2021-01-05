@@ -1,9 +1,9 @@
 'use strict'
 
 const apiCompatibilityChecks = require('opentracing/lib/test/api_compatibility').default
-const tracer = require('../..')
 
 apiCompatibilityChecks(() => {
+  const tracer = proxyquire('../..', {})
   return tracer.init({
     service: 'test',
     flushInterval: 0,
