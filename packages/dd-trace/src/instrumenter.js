@@ -151,6 +151,7 @@ class Instrumenter {
     platform.metrics().boolean(`datadog.tracer.node.plugin.enabled.by.name`, enabled, `name:${meta.name}`)
 
     try {
+      //console.log(instrumentations)
       instrumentations
         .forEach(instrumentation => {
           this._loader.load(instrumentation, meta.config)

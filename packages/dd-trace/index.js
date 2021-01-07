@@ -11,5 +11,5 @@ module.exports = new TracerProxy()
 module.exports.default = module.exports
 module.exports.tracer = module.exports
 
-console.trace('initializing')
+// console.trace('initializing')
 module.exports.init()

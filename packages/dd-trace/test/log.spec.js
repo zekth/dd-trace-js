@@ -1,6 +1,7 @@
 'use strict'
-
 /* eslint-disable no-console */
+
+const path = require('path')
 
 describe('log', () => {
   let log
@@ -271,7 +272,7 @@ describe('log', () => {
         onceDone = () => {}
         done()
       }
-      const tracer = require('../../dd-trace').init({
+      const tracer = proxyquire(path.join(__dirname, '../../dd-trace'), {}).init({
         debug: true,
         plugins: false,
         service: 'test',

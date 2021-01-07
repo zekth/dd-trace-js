@@ -6,6 +6,8 @@ const agent = require('../agent')
 const types = require('../../../../../ext/types')
 const kinds = require('../../../../../ext/kinds')
 const tags = require('../../../../../ext/tags')
+const path = require('path')
+const proxyquire = require('../../proxyquire')
 
 const WEB = types.WEB
 const SERVER = kinds.SERVER
@@ -53,8 +55,9 @@ describe('plugins/util/web', () => {
     res.getHeader.withArgs('server').returns('test')
     config = { hooks: {} }
 
-    tracer = require('../../..').init({ plugins: false })
-    web = require('../../../src/plugins/util/web')
+    tracer = proxyquire(path.join(__dirname, '../../..'), {})
+    tracer.init({ plugins: false })
+    web = proxyquire(path.join(__dirname, '../../../src/plugins/util/web'), {})
   })
 
   beforeEach(() => {
@@ -709,23 +712,25 @@ describe('plugins/util/web', () => {
     })
   })
 
-  describe('with an instrumented web server', done => {
+  describe('with an instrumented web server', () => {
     let express
     let app
     let port
     let server
     let http
 
-    beforeEach(done => {
+    beforeEach(function (done) {
+      this.timeout(4000)
       agent.load('express')
-        .then(getPort)
         .then(_port => {
-          port = _port
           http = require('http')
           express = require('express')
           app = express()
 
-          server = app.listen(port, '127.0.0.1', () => done())
+          server = app.listen(0, '127.0.0.1', () => {
+            port = server.address().port
+            done()
+          })
         })
     })
 

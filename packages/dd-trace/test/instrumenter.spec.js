@@ -5,7 +5,7 @@ const path = require('path')
 const shimmer = require('shimmer')
 const { expect } = require('chai')
 
-describe.only('Instrumenter', () => {
+describe('Instrumenter', () => {
   let Instrumenter
   let instrumenter
   let integrations
