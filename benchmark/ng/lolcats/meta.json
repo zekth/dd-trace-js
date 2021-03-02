@@ -1,0 +1,12 @@
+{
+  "name": "lolcats",
+  "setup": "node setup.js",
+  "run": "node index.js",
+  "timeout": 600,
+  "images": {
+    "hello-world-service": {
+      "image": "kornkitti/express-hello-world",
+      "ports": ["8080:8080"]
+    }
+  }
+}
