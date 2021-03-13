@@ -1,7 +1,7 @@
 'use strict'
 
 const log = require('./log')
-const { profiler, AgentExporter, FileExporter } = require('./profiling')
+const { profiler, AgentExporter, FileExporter, ForwarderExporter } = require('./profiling')
 
 module.exports = {
   start: config => {
@@ -40,6 +40,9 @@ function getExporters (names, { url, hostname, port }) {
         break
       case 'file':
         exporters.push(new FileExporter())
+        break
+      case 'forwarder':
+        exporters.push(new ForwarderExporter())
         break
     }
   }

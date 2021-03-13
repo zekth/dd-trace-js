@@ -4,7 +4,6 @@ const { maybeRequire } = require('../../util')
 
 class NativeCpuProfiler {
   constructor (options = {}) {
-    this.type = 'wall'
     this._pprof = maybeRequire('pprof')
     this._samplingInterval = options.samplingInterval || 10 * 1000
   }

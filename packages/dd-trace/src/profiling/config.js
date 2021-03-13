@@ -23,7 +23,7 @@ class Config {
     const service = options.service || DD_SERVICE || 'node'
     const host = os.hostname()
     const version = coalesce(options.version, DD_VERSION)
-    const flushInterval = 60 * 1000
+    const flushInterval = 1 * 1000
 
     this.enabled = String(enabled) !== 'false'
     this.service = service

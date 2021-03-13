@@ -7,6 +7,7 @@ const { NativeCpuProfiler } = require('./profilers/native/cpu')
 const { NativeHeapProfiler } = require('./profilers/native/heap')
 const { AgentExporter } = require('./exporters/agent')
 const { FileExporter } = require('./exporters/file')
+const { ForwarderExporter } = require('./exporters/forwarder')
 const { ConsoleLogger } = require('./loggers/console')
 
 const profiler = new Profiler()
@@ -15,6 +16,7 @@ module.exports = {
   profiler,
   AgentExporter,
   FileExporter,
+  ForwarderExporter,
   InspectorCpuProfiler,
   InspectorHeapProfiler,
   NativeCpuProfiler,

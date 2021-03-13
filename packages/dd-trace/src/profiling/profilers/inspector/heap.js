@@ -1,10 +1,7 @@
 'use strict'
 
-const { Profile } = require('../../profile')
-
 class InspectorHeapProfiler {
   constructor (options = {}) {
-    this.type = 'space'
     this._samplingInterval = options.samplingInterval || 512 * 1024
   }
 
@@ -30,42 +27,14 @@ class InspectorHeapProfiler {
     this._mapper = null
   }
 
-  profile (callback) {
-    this._session.post('HeapProfiler.getSamplingProfile', (err, params) => {
-      if (err) return callback(err)
+  profile () {
+    return new Promise((resolve, reject) => {
+      this._session.post('HeapProfiler.getSamplingProfile', (err, params) => {
+        if (err) return reject(err)
 
-      this._serialize(params.profile, callback)
+        resolve(params.profile)
+      })
     })
-  }
-
-  _serialize ({ head, samples }, callback) {
-    const sampleType = [['space', 'bytes']]
-    const periodType = ['space', 'bytes']
-    const period = this._samplingInterval
-    const profile = new Profile(sampleType, periodType, period)
-    const nodes = head.children.slice() // pprof has implicit root so skip root
-
-    let node
-
-    while ((node = nodes.shift())) {
-      const { id, selfSize, callFrame, children } = node
-      const { functionName, url, lineNumber } = callFrame // TODO: support source maps
-      const functionId = profile.addFunction(functionName, url).id
-      const locationId = profile.addLocation(functionId, id, lineNumber).id
-
-      if (children) {
-        for (const child of children) {
-          nodes.push(child)
-          profile.addLink(locationId, child.id)
-        }
-      }
-
-      if (selfSize) {
-        profile.addSample(locationId, [selfSize])
-      }
-    }
-
-    callback(null, profile.export())
   }
 }
 
