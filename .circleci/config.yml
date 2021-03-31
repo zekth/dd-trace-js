@@ -288,7 +288,7 @@ jobs:
   node-bench-sirun-async-hooks:
     <<: *node-bench-sirun-base
     docker:
-      - image: cimg/node
+      - image: cimg/node:15.11.0
         environment:
           - SIRUN_TEST_DIR=async_hooks
     steps:
