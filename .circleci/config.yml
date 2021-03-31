@@ -293,6 +293,8 @@ jobs:
           - SIRUN_TEST_DIR=async_hooks
     steps:
       - run:
+          command: apt-get update && apt-get install linux-tools-common linux-tools-`uname -r`
+      - run:
           command: perf stat -e instructions node -e "console.log('hello')"
       # - run:
       #     name: Install system deps
