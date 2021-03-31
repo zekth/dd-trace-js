@@ -291,6 +291,23 @@ jobs:
       - image: node
         environment:
           - SIRUN_TEST_DIR=async_hooks
+    steps:
+      - run:
+          command: perf stat -e instructions node -e "console.log('hello')"
+      # - run:
+      #     name: Install system deps
+      #     command: apt-get update && apt-get install -y valgrind wget
+      # - run:
+      #     name: Install sirun
+      #     command: wget https://github.com/DataDog/sirun/releases/download/v0.1.5/sirun-v0.1.5-x86_64-unknown-linux-gnu.tar.gz && tar zxf sirun-v0.1.5-x86_64-unknown-linux-gnu.tar.gz && mv sirun /usr/bin
+      # - run:
+      #     name: Run sirun
+      #     command: |
+      #       cd benchmark/sirun/$SIRUN_TEST_DIR
+      #       node /root/dd-trace-js/benchmark/sirun/run-all-variants.js | tee /tmp/sirun-output.ndjson
+      # - store_artifacts:
+      #     path: /tmp/sirun-output.ndjson
+      #     destination: sirun-output.ndjson
 
   # Core tests
 
@@ -1113,75 +1130,75 @@ workflows:
   version: 2
   build:
     jobs:
-      - lint
-      - typescript
-      - node-core-8
-      - node-core-10
-      - node-core-12
-      - node-core-14
-      - node-core-15
-      - node-core-latest
-      - node-core-windows
-      - node-integration-8
-      - node-integration-10
-      - node-integration-12
-      - node-integration-14
-      - node-integration-15
-      - node-integration-latest
-      - node-bench-latest
-      - node-bench-profiler-latest
-      - node-bench-e2e-latest
-      - node-bench-sirun-startup-latest
+      # - lint
+      # - typescript
+      # - node-core-8
+      # - node-core-10
+      # - node-core-12
+      # - node-core-14
+      # - node-core-15
+      # - node-core-latest
+      # - node-core-windows
+      # - node-integration-8
+      # - node-integration-10
+      # - node-integration-12
+      # - node-integration-14
+      # - node-integration-15
+      # - node-integration-latest
+      # - node-bench-latest
+      # - node-bench-profiler-latest
+      # - node-bench-e2e-latest
+      # - node-bench-sirun-startup-latest
       - node-bench-sirun-async-hooks
-      - node-amqplib
-      - node-amqp10
-      - node-aws-sdk
-      - node-bluebird
-      - node-bunyan
-      - node-cassandra
-      - node-connect
-      - node-couchbase
-      - node-dns
-      - node-elasticsearch
-      - node-express
-      - node-fastify
-      - node-fs-8
-      - node-fs-10
-      - node-fs-12
-      - node-fs-14
-      - node-fs-15
-      - node-fs-latest
-      - node-generic-pool
-      - node-google-cloud-pubsub
-      - node-graphql
-      - node-grpc
-      - node-hapi
-      - node-http
-      - node-http2
-      - node-jest
-      - node-kafkajs
-      - node-knex
-      - node-koa
-      # - node-limitd-client
-      - node-memcached
-      - node-microgateway-core
-      - node-mocha
-      - node-mongodb-core
-      - node-mongoose
-      - node-mysql
-      - node-net
-      - node-paperplane
-      - node-pino
-      - node-postgres
-      - node-promise-js
-      - node-promise
-      - node-q
-      - node-redis
-      - node-restify
-      - node-router
-      - node-tedious
-      - node-when
-      - node-winston
+      # - node-amqplib
+      # - node-amqp10
+      # - node-aws-sdk
+      # - node-bluebird
+      # - node-bunyan
+      # - node-cassandra
+      # - node-connect
+      # - node-couchbase
+      # - node-dns
+      # - node-elasticsearch
+      # - node-express
+      # - node-fastify
+      # - node-fs-8
+      # - node-fs-10
+      # - node-fs-12
+      # - node-fs-14
+      # - node-fs-15
+      # - node-fs-latest
+      # - node-generic-pool
+      # - node-google-cloud-pubsub
+      # - node-graphql
+      # - node-grpc
+      # - node-hapi
+      # - node-http
+      # - node-http2
+      # - node-jest
+      # - node-kafkajs
+      # - node-knex
+      # - node-koa
+      # # - node-limitd-client
+      # - node-memcached
+      # - node-microgateway-core
+      # - node-mocha
+      # - node-mongodb-core
+      # - node-mongoose
+      # - node-mysql
+      # - node-net
+      # - node-paperplane
+      # - node-pino
+      # - node-postgres
+      # - node-promise-js
+      # - node-promise
+      # - node-q
+      # - node-redis
+      # - node-restify
+      # - node-router
+      # - node-tedious
+      # - node-when
+      # - node-winston
       - codecov:
           requires:
             - node-core-8
