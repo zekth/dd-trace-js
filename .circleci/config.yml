@@ -289,12 +289,14 @@ jobs:
     resource_class: small
     working_directory: ~/dd-trace-js
     machine:
-      image: ubuntu-1604:202007-01
+      image: ubuntu-2004:202101-01
     steps:
       - run:
           command: sudo apt-get update && sudo apt-get install linux-tools-common linux-tools-`uname -r`
       - run:
-          command: sudo perf list && perf stat -e instructions node -e "console.log('hello')"
+          command: sudo perf list
+      - run:
+          command: sudo perf stat -e instructions node -e "console.log('hello')"
       # - run:
       #     name: Install system deps
       #     command: apt-get update && apt-get install -y valgrind wget
