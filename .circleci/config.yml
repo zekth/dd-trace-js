@@ -293,10 +293,10 @@ jobs:
     steps:
       - run:
           command: sudo apt-get update && sudo apt-get install linux-tools-common linux-tools-`uname -r`
+      # - run:
+      #     command: sudo perf list
       - run:
-          command: sudo perf list
-      - run:
-          command: sudo perf stat -e instructions node -e "console.log('hello')"
+          command: sudo perf stat node -e "console.log('hello')"
       # - run:
       #     name: Install system deps
       #     command: apt-get update && apt-get install -y valgrind wget
