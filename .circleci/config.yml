@@ -286,7 +286,8 @@ jobs:
           - SIRUN_TEST_DIR=startup
 
   node-bench-sirun-async-hooks:
-    <<: *node-bench-sirun-base
+    resource_class: small
+    working_directory: ~/dd-trace-js
     machine:
       image: ubuntu-1604:202007-01
     steps:
