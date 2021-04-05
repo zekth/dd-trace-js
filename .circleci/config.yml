@@ -306,6 +306,13 @@ jobs:
         environment:
           - SIRUN_TEST_DIR=scope
 
+  node-bench-sirun-exporting-pipeline-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=exporting-pipeline
+
   # Core tests
 
   node-core-8:
@@ -1149,6 +1156,7 @@ workflows:
       - node-bench-sirun-async-hooks
       - node-bench-sirun-encoders-latest
       - node-bench-sirun-scope-latest
+      - node-bench-sirun-exporting-pipeline-latest
       - node-amqplib
       - node-amqp10
       - node-aws-sdk
@@ -1403,6 +1411,7 @@ workflows:
       - node-bench-sirun-async-hooks
       - node-bench-sirun-encoders-latest
       - node-bench-sirun-scope-latest
+      - node-bench-sirun-exporting-pipeline-latest
       - node-amqplib
       - node-amqp10
       - node-aws-sdk
