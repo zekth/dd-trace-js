@@ -49,19 +49,8 @@ function utf8Length(str) {
   return length;
 }
 
-const cache = new Map();
-const cacheMaxSize = process.env.NOTEPACK_ENCODE_CACHE_MAX_SIZE || 1024;
-
 /*jshint latedef: nofunc */
 function encodeKey(bytes, defers, key) {
-  if (cache.has(key)) {
-    const buffer = cache.get(key);
-    defers.push({ bin: buffer, length: buffer.length, offset: bytes.length });
-    return buffer.length;
-  }
-  if (cache.size > cacheMaxSize) {
-    return _encode(bytes, defers, key);
-  }
   const keyBytes = [];
   const size = _encode(keyBytes, [], key);
   const keyBuffer = Buffer.allocUnsafe(size);
@@ -70,7 +59,6 @@ function encodeKey(bytes, defers, key) {
   }
   utf8Write(keyBuffer, keyBytes.length, key);
   defers.push({ bin: keyBuffer, length: size, offset: bytes.length });
-  cache.set(key, keyBuffer);
   return size;
 }
 
