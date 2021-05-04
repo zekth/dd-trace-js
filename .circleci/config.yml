@@ -655,7 +655,7 @@ jobs:
   node-grpc:
     <<: *node-plugin-base
     docker:
-      - image: node:8
+      - image: node:12
         environment:
           - PLUGINS=grpc
 
