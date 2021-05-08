@@ -222,7 +222,7 @@ prebuild-darwin-base: &prebuild-darwin-base
 
 prebuild-win32-base: &prebuild-win32-base
   executor:
-    name: win/vs2019
+    name: win/default
     size: xlarge
   working_directory: ~/dd-trace-js
   steps:
@@ -411,7 +411,7 @@ jobs:
 
   node-core-windows:
     executor:
-      name: win/vs2019
+      name: win/default
       size: xlarge
     working_directory: ~/dd-trace-js
     steps:
