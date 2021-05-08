@@ -210,6 +210,7 @@ test-prebuild-linux-base: &test-prebuild-linux-base
 prebuild-darwin-base: &prebuild-darwin-base
   macos:
     xcode: "10.2.0"
+  resource_class: xlarge
   working_directory: ~/dd-trace-js
   steps:
     - checkout
@@ -1052,67 +1053,19 @@ jobs:
 
   # Prebuilds (darwin x64)
 
-  mac-x64-16:
+  mac-x64:
     <<: *prebuild-darwin-base
     environment:
       - ARCH=x64
-      - NODE_VERSIONS=16
-
-  mac-x64-14:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=x64
-      - NODE_VERSIONS=14 - 15
-
-  mac-x64-12:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=x64
-      - NODE_VERSIONS=12 - 13
-
-  mac-x64-10:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=x64
-      - NODE_VERSIONS=10 - 11
-
-  mac-x64-8:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=x64
-      - NODE_VERSIONS=8 - 9
+      - NODE_VERSIONS=*
 
   # Prebuilds (darwin ia32)
 
-  mac-ia32-16:
+  mac-ia32:
     <<: *prebuild-darwin-base
     environment:
       - ARCH=ia32
-      - NODE_VERSIONS=16
-
-  mac-ia32-14:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=14 - 15
-
-  mac-ia32-12:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=12 - 13
-
-  mac-ia32-10:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=10 - 11
-
-  mac-ia32-8:
-    <<: *prebuild-darwin-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=8 - 9
+      - NODE_VERSIONS=*
 
   # Prebuilds (win32 x64)
 
@@ -1124,35 +1077,11 @@ jobs:
 
   # Prebuilds (win32 ia32)
 
-  win-ia32-16:
+  win-ia32:
     <<: *prebuild-win32-base
     environment:
       - ARCH=ia32
-      - NODE_VERSIONS=16
-
-  win-ia32-14:
-    <<: *prebuild-win32-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=14 - 15
-
-  win-ia32-12:
-    <<: *prebuild-win32-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=12 - 13
-
-  win-ia32-10:
-    <<: *prebuild-win32-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=10 - 11
-
-  win-ia32-8:
-    <<: *prebuild-win32-base
-    environment:
-      - ARCH=ia32
-      - NODE_VERSIONS=8 - 9
+      - NODE_VERSIONS=*
 
   # Prebuild Artifacts
 
@@ -1378,34 +1307,16 @@ workflows:
       - alpine-ia32:
           <<: *prebuild-job
       # Darwin x64
-      - mac-x64-14:
-          <<: *prebuild-job
-      - mac-x64-12:
-          <<: *prebuild-job
-      - mac-x64-10:
-          <<: *prebuild-job
-      - mac-x64-8:
+      - mac-x64:
           <<: *prebuild-job
       # Darwin ia32
-      - mac-ia32-14:
-          <<: *prebuild-job
-      - mac-ia32-12:
-          <<: *prebuild-job
-      - mac-ia32-10:
-          <<: *prebuild-job
-      - mac-ia32-8:
+      - mac-ia32:
           <<: *prebuild-job
       # Windows x64
       - win-x64:
           <<: *prebuild-job
       # Windows ia32
-      - win-ia32-14:
-          <<: *prebuild-job
-      - win-ia32-12:
-          <<: *prebuild-job
-      - win-ia32-10:
-          <<: *prebuild-job
-      - win-ia32-8:
+      - win-ia32:
           <<: *prebuild-job
       # Artifacts
       - prebuilds:
@@ -1421,19 +1332,10 @@ workflows:
             - linux-ia32-8-test
             - alpine-x64
             - alpine-ia32
-            - mac-x64-14
-            - mac-x64-12
-            - mac-x64-10
-            - mac-x64-8
-            - mac-ia32-14
-            - mac-ia32-12
-            - mac-ia32-10
-            - mac-ia32-8
+            - mac-x64
+            - mac-ia32
             - win-x64
-            - win-ia32-14
-            - win-ia32-12
-            - win-ia32-10
-            - win-ia32-8
+            - win-ia32
   nightly:
     triggers:
       - schedule:
