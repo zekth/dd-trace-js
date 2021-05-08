@@ -221,7 +221,9 @@ prebuild-darwin-base: &prebuild-darwin-base
     - *persist-prebuilds
 
 prebuild-win32-base: &prebuild-win32-base
-  executor: win/vs2019
+  executor:
+    name: win/vs2019
+    size: xlarge
   working_directory: ~/dd-trace-js
   steps:
     - checkout
@@ -408,7 +410,9 @@ jobs:
   # Windows tests
 
   node-core-windows:
-    executor: win/vs2019
+    executor:
+      name: win/vs2019
+      size: xlarge
     working_directory: ~/dd-trace-js
     steps:
       - checkout
@@ -1111,6 +1115,12 @@ jobs:
       - NODE_VERSIONS=8 - 9
 
   # Prebuilds (win32 x64)
+
+  win-x64:
+    <<: *prebuild-win32-base
+    environment:
+      - ARCH=x64
+      - NODE_VERSIONS=8 - 16
 
   win-x64-16:
     <<: *prebuild-win32-base
