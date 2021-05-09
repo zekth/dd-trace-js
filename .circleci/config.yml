@@ -210,7 +210,7 @@ test-prebuild-linux-base: &test-prebuild-linux-base
 prebuild-darwin-base: &prebuild-darwin-base
   macos:
     xcode: "10.2.0"
-  resource_class: xlarge
+  resource_class: large # "large" is currently the largest machine
   working_directory: ~/dd-trace-js
   steps:
     - checkout
@@ -1057,7 +1057,13 @@ jobs:
     <<: *prebuild-darwin-base
     environment:
       - ARCH=x64
-      - NODE_VERSIONS=*
+      - NODE_VERSIONS=12 - 16
+
+  mac-x64-legacy:
+    <<: *prebuild-darwin-base
+    environment:
+      - ARCH=x64
+      - NODE_VERSIONS=8 - 11
 
   # Prebuilds (darwin ia32)
 
@@ -1065,7 +1071,13 @@ jobs:
     <<: *prebuild-darwin-base
     environment:
       - ARCH=ia32
-      - NODE_VERSIONS=*
+      - NODE_VERSIONS=12 - 16
+
+  mac-ia32-legacy:
+    <<: *prebuild-darwin-base
+    environment:
+      - ARCH=ia32
+      - NODE_VERSIONS=8 - 11
 
   # Prebuilds (win32 x64)
 
@@ -1073,7 +1085,13 @@ jobs:
     <<: *prebuild-win32-base
     environment:
       - ARCH=x64
-      - NODE_VERSIONS=*
+      - NODE_VERSIONS=12 - 16
+
+  win-x64:
+    <<: *prebuild-win32-base
+    environment:
+      - ARCH=x64
+      - NODE_VERSIONS=8 - 11
 
   # Prebuilds (win32 ia32)
 
@@ -1081,7 +1099,13 @@ jobs:
     <<: *prebuild-win32-base
     environment:
       - ARCH=ia32
-      - NODE_VERSIONS=*
+      - NODE_VERSIONS=12 - 16
+
+  win-ia32:
+    <<: *prebuild-win32-base
+    environment:
+      - ARCH=ia32
+      - NODE_VERSIONS=8 - 11
 
   # Prebuild Artifacts
 
@@ -1309,14 +1333,22 @@ workflows:
       # Darwin x64
       - mac-x64:
           <<: *prebuild-job
+      - mac-x64-legacy:
+          <<: *prebuild-job
       # Darwin ia32
       - mac-ia32:
+          <<: *prebuild-job
+      - mac-ia32-legacy:
           <<: *prebuild-job
       # Windows x64
       - win-x64:
           <<: *prebuild-job
+      - win-x64-legacy:
+          <<: *prebuild-job
       # Windows ia32
       - win-ia32:
+          <<: *prebuild-job
+      - win-ia32-legacy:
           <<: *prebuild-job
       # Artifacts
       - prebuilds:
@@ -1333,9 +1365,13 @@ workflows:
             - alpine-x64
             - alpine-ia32
             - mac-x64
+            - mac-x64-legacy
             - mac-ia32
+            - mac-ia32-legacy
             - win-x64
+            - win-x64-legacy
             - win-ia32
+            - win-ia32-legacy
   nightly:
     triggers:
       - schedule:
