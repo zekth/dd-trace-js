@@ -1087,7 +1087,7 @@ jobs:
       - ARCH=x64
       - NODE_VERSIONS=12 - 16
 
-  win-x64:
+  win-x64-legacy:
     <<: *prebuild-win32-base
     environment:
       - ARCH=x64
@@ -1101,7 +1101,7 @@ jobs:
       - ARCH=ia32
       - NODE_VERSIONS=12 - 16
 
-  win-ia32:
+  win-ia32-legacy:
     <<: *prebuild-win32-base
     environment:
       - ARCH=ia32
