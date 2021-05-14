@@ -11,53 +11,54 @@ executors:
       - image: cimg/base:2020.01
   windows: win/default
 
-node-core:
-  parameters:
-    os:
-      type: executor
-    node-version:
-      type: string
-  executor: << parameters.os >>
-  working_directory: ~/dd-trace-js
-  steps:
-    - checkout
-    - node/install:
-        node-version: << parameters.node-version >>
-        install-yarn: true
-    - &yarn-versions
-      run:
-        name: Versions
-        command: yarn versions
-    - &restore-yarn-cache
-      restore_cache:
-        key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
-    - &yarn-install
-      run:
-        name: Install dependencies
-        command: yarn install --ignore-engines
-    - &save-yarn-cache
-      save_cache:
-        key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
-        paths:
-          - ./node_modules
-          - ./yarn.lock
-    - &yarn-rebuild
-      run:
-        name: Compile native code
-        command: yarn rebuild
-    - &yarn-test-core
-      run:
-        name: Unit tests
-        command: yarn test:core:ci
-    # - run:
-    #     name: Merge coverage report
-    #     command: yarn cover:merge
-    # - store_artifacts:
-    #     path: ./coverage
-    # - persist_to_workspace:
-    #     root: ~/dd-trace-js
-    #     paths:
-    #       - .nyc_merge/*
+jobs:
+  node-core:
+    parameters:
+      os:
+        type: executor
+      node-version:
+        type: string
+    executor: << parameters.os >>
+    working_directory: ~/dd-trace-js
+    steps:
+      - checkout
+      - node/install:
+          node-version: << parameters.node-version >>
+          install-yarn: true
+      - &yarn-versions
+        run:
+          name: Versions
+          command: yarn versions
+      - &restore-yarn-cache
+        restore_cache:
+          key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
+      - &yarn-install
+        run:
+          name: Install dependencies
+          command: yarn install --ignore-engines
+      - &save-yarn-cache
+        save_cache:
+          key: yarn-{{ .Environment.CIRCLE_JOB }}-{{ checksum "package.json" }}
+          paths:
+            - ./node_modules
+            - ./yarn.lock
+      - &yarn-rebuild
+        run:
+          name: Compile native code
+          command: yarn rebuild
+      - &yarn-test-core
+        run:
+          name: Unit tests
+          command: yarn test:core:ci
+      # - run:
+      #     name: Merge coverage report
+      #     command: yarn cover:merge
+      # - store_artifacts:
+      #     path: ./coverage
+      # - persist_to_workspace:
+      #     root: ~/dd-trace-js
+      #     paths:
+      #       - .nyc_merge/*
 
 workflows:
   version: 2
