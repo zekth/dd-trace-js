@@ -13,8 +13,8 @@ test-oracledb:
   stage: build
   image: bengl/node-10-with-oracle-client
   environment:
-    - SERVICES=oracledb
-    - PLUGINS=oracledb
+    SERVICES: oracledb
+    PLUGINS: oracledb
   services:
     - quillbuilduser/oracle-18-xe
   script:
