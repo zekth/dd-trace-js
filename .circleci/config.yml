@@ -5,26 +5,29 @@ orbs:
   win: circleci/windows@2.2.0
 
 executors:
-  linux:
-    resource_class: small
+  node-linux:
+    parameters:
+      version:
+        default: "latest"
+        type: string
     docker:
-      - image: cimg/base:2020.01
-  windows: win/default
+      - image: node:<<parameters.version>>
+    resource_class: small
+  node-windows: win/default
 
 jobs:
   node-core:
     parameters:
       os:
         type: executor
-      node-version:
+      version:
         type: string
-    executor: << parameters.os >>
+    executor:
+      name: node-linux
+      version: <<parameters.version>>
     working_directory: ~/dd-trace-js
     steps:
       - checkout
-      - node/install:
-          node-version: << parameters.node-version >>
-          install-yarn: true
       - &yarn-versions
         run:
           name: Versions
@@ -67,5 +70,5 @@ workflows:
       - node-core:
           matrix:
             parameters:
-              os: [linux, windows]
-              node-version: ["8", "10", "12", "14", "16"]
+              os: [node-linux]
+              version: ["8", "10", "12", "14", "16"]
