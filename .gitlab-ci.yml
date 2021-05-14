@@ -12,7 +12,7 @@ test-oracledb:
   <<: *common
   stage: build
   image: bengl/node-10-with-oracle-client
-  environment:
+  variables:
     SERVICES: oracledb
     PLUGINS: oracledb
   services:
