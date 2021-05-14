@@ -5,7 +5,7 @@ orbs:
   win: circleci/windows@2.2.0
 
 executors:
-  node-linux:
+  linux:
     parameters:
       version:
         default: "latest"
@@ -13,17 +13,18 @@ executors:
     docker:
       - image: node:<<parameters.version>>
     resource_class: small
-  node-windows: win/default
+  windows: win/default
 
 jobs:
-  node-core:
+  core:
     parameters:
       os:
         type: executor
       version:
         type: string
+        default: "latest"
     executor:
-      name: node-linux
+      name: linux
       version: <<parameters.version>>
     working_directory: ~/dd-trace-js
     steps:
@@ -67,8 +68,12 @@ workflows:
   version: 2
   test:
     jobs:
-      - node-core:
+      - core:
           matrix:
             parameters:
-              os: [node-linux]
+              os: [linux]
               version: ["8", "10", "12", "14", "16"]
+      - core:
+          matrix:
+            parameters:
+              os: [windows]
