@@ -570,7 +570,7 @@ jobs:
         environment:
           - SERVICES=oracledb
           - PLUGINS=oracledb
-      - image: quillbuilduser/oracle-18-xe
+      - image: quillbuilduser/oracle-18-xe-micro
 
   node-mongodb-core:
     <<: *node-plugin-base
