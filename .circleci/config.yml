@@ -1,13 +1,12 @@
 version: 2.1
 
 orbs:
-  node: circleci/node@2.0.0
-  win: circleci/windows@2.2.0
+  win: circleci/windows@2.4.0
 
 executors:
   linux:
     parameters:
-      version:
+      node-version:
         default: "latest"
         type: string
     docker:
@@ -25,7 +24,7 @@ jobs:
         default: "latest"
     executor:
       name: <<parameters.os>>
-      version: <<parameters.version>>
+      node-version: <<parameters.version>>
     working_directory: ~/dd-trace-js
     steps:
       - checkout
