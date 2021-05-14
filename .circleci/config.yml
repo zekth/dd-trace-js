@@ -10,7 +10,7 @@ executors:
     docker:
       - image: cimg/base:2020.01
   windows:
-    executor:
+    windows:
       name: win/default
       size: medium
 
