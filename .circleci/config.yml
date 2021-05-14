@@ -19,12 +19,12 @@ jobs:
   core:
     parameters:
       os:
-        type: executor
+        type: string
       version:
         type: string
         default: "latest"
     executor:
-      name: linux
+      name: <<parameters.os>>
       version: <<parameters.version>>
     working_directory: ~/dd-trace-js
     steps:
