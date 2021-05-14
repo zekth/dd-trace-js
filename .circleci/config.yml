@@ -9,9 +9,7 @@ executors:
     resource_class: small
     docker:
       - image: cimg/base:2020.01
-  windows:
-    name: win/default
-    size: medium
+  windows: win/default
 
 node-core:
   parameters:
