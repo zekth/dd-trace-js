@@ -10,9 +10,17 @@ executors:
         default: "latest"
         type: string
     docker:
-      - image: node:<<parameters.version>>
+      - image: node:<<parameters.node-version>>
     resource_class: small
-  windows: win/default
+  windows:
+    parameters:
+      node-version:
+        default: "latest"
+        type: string
+    machine:
+      image: windows-server-2019-vs2019:stable
+      resource_class: windows.medium
+      shell: bash
 
 jobs:
   core:
