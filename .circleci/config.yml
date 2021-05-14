@@ -1044,7 +1044,7 @@ workflows:
       # - node-mongodb-core
       # - node-mongoose
       # - node-mysql
-      # - node-oracledb
+      - node-oracledb
       # - node-net
       # - node-paperplane
       # - node-pino
