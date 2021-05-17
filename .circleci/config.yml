@@ -565,6 +565,7 @@ jobs:
 
   node-oracledb:
     <<: *node-plugin-base
+    resource_class: large
     docker:
       - image: bengl/node-10-with-oracle-client
         environment:
