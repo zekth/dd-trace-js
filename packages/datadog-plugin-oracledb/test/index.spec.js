@@ -5,9 +5,9 @@ const plugin = require('../src')
 wrapIt()
 
 const config = {
-  user: 'sysdba',
+  user: 'test',
   password: 'Oracle18',
-  connectString: 'localhost:1521/xe'
+  connectString: 'localhost:1521/xepdb1'
 }
 
 const dbQuery = 'select current_timestamp from dual'
