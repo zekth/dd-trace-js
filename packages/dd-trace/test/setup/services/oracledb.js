@@ -9,13 +9,14 @@ function waitForOracledb () {
         .getConnection({
           user: 'sys',
           password: 'Oracle18',
-          connectString: 'localhost:1521/xepdb1',
+          connectString: 'localhost:1521/xe',
           privilege: 2
         })
         .then(connection => {
           return ensureTestUser(connection)
         })
-        .then(resolve, (err) => {
+        .then(resolve)
+        .catch(err => {
           if (!operation.retry(err)) reject(err)
         })
     })
