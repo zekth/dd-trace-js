@@ -8,7 +8,7 @@ function waitForOracledb () {
       oracledb.getConnection({
         user: 'sys',
         password: 'Oracle18',
-        connectString: 'oracledb:1521/xepdb1',
+        connectString: 'localhost:1521/xepdb1',
         privilege: 2
       }).then((connection) => {
         resolve(connection)
