@@ -5,7 +5,7 @@ const plugin = require('../src')
 wrapIt()
 
 const config = {
-  user: 'test',
+  user: 'sys',
   password: 'Oracle18',
   connectString: 'localhost:1521/xe'
 }
