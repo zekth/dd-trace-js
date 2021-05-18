@@ -93,7 +93,7 @@ function getServiceName (tracer, config, connAttrs) {
   } else if (config.service) {
     return config.service
   } else {
-    return `${tracer._service}-oracledb`
+    return `${tracer._service}-oracle`
   }
 }
 
