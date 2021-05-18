@@ -31,7 +31,7 @@ describe('Plugin', () => {
             await agent.close()
           })
 
-          it('should be instrumented correctly with correct tags', done => {
+          it.only('should be instrumented correctly with correct tags', done => {
             agent.use(traces => {
               expect(traces[0][0]).to.have.property('name', 'oracle.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
