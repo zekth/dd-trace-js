@@ -33,7 +33,7 @@ describe('Plugin', () => {
 
           it('should be instrumented correctly with correct tags', done => {
             agent.use(traces => {
-              expect(traces[0][0]).to.have.property('name', 'exec.query')
+              expect(traces[0][0]).to.have.property('name', 'oracle.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
               expect(traces[0][0]).to.have.property('type', 'sql')
               expect(traces[0][0].meta).to.have.property('service', 'test')
@@ -90,7 +90,7 @@ describe('Plugin', () => {
               callbackRan = true
             })
             agent.use(traces => {
-              expect(traces[0][0]).to.have.property('name', 'exec.query')
+              expect(traces[0][0]).to.have.property('name', 'oracle.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
               expect(traces[0][0]).to.have.property('type', 'sql')
               expect(traces[0][0].meta).to.have.property('service', 'test')
@@ -120,7 +120,7 @@ describe('Plugin', () => {
 
           it('should be instrumented correctly with correct tags', done => {
             agent.use(traces => {
-              expect(traces[0][0]).to.have.property('name', 'exec.query')
+              expect(traces[0][0]).to.have.property('name', 'oracle.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
               expect(traces[0][0]).to.have.property('type', 'sql')
               expect(traces[0][0].meta).to.have.property('service', 'test')
