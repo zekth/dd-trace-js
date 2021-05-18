@@ -29,8 +29,8 @@ describe('Plugin', () => {
         })
 
         describe('with connection', () => {
-          before(() => {
-            connection = oracledb.getConnection(config)
+          before(async () => {
+            connection = await oracledb.getConnection(config)
           })
           after(async () => {
             await connection.close()
