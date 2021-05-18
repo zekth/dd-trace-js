@@ -152,7 +152,7 @@ module.exports = {
   wipe () {
     const basedir = path.join(__dirname, '..', '..', '..', '..', 'versions')
     // wiping native modules results in errors
-    const exceptions = ['/libpq/', '/grpc/', '/sqlite3/', '/couchbase/', '/\\.node$/']
+    const exceptions = ['/libpq/', '/grpc/', '/sqlite3/', '/couchbase/', '\\.node$']
       .map(exception => new RegExp(exception))
 
     Object.keys(require.cache)
