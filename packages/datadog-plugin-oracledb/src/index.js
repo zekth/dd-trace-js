@@ -7,6 +7,7 @@ function createWrapExecute (tracer, config) {
       return tracer.trace('exec.query', {
         tags: {
           'span.kind': 'client',
+          'span.type': 'sql',
           'sql.query': dbQuery,
           'db.instance': connectStringObj.pathname.substring(1),
           'db.hostname': connectStringObj.hostname,

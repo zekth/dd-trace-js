@@ -35,6 +35,7 @@ describe('Plugin', () => {
             agent.use(traces => {
               expect(traces[0][0]).to.have.property('name', 'exec.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
+              expect(traces[0][0]).to.have.property('type', 'sql')
               expect(traces[0][0].meta).to.have.property('service', 'test')
               expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('sql.query', 'select current_timestamp from dual')
@@ -91,6 +92,7 @@ describe('Plugin', () => {
             agent.use(traces => {
               expect(traces[0][0]).to.have.property('name', 'exec.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
+              expect(traces[0][0]).to.have.property('type', 'sql')
               expect(traces[0][0].meta).to.have.property('service', 'test')
               expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('sql.query', 'select current_timestamp from dual')
@@ -120,6 +122,7 @@ describe('Plugin', () => {
             agent.use(traces => {
               expect(traces[0][0]).to.have.property('name', 'exec.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
+              expect(traces[0][0]).to.have.property('type', 'sql')
               expect(traces[0][0].meta).to.have.property('service', 'test')
               expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('sql.query', 'select current_timestamp from dual')
