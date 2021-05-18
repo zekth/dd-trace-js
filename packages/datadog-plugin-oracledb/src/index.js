@@ -4,7 +4,7 @@ function createWrapExecute (tracer, config) {
       const connAttrs = this._dd_connAttrs
       const service = getServiceName(tracer, config, connAttrs)
       const connectStringObj = new URL('http://' + connAttrs.connectString)
-      return tracer.trace('exec.query', {
+      return tracer.trace('oracle.query', {
         tags: {
           'span.kind': 'client',
           'span.type': 'sql',
