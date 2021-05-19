@@ -287,35 +287,35 @@ jobs:
   node-bench-sirun-startup-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - SIRUN_TEST_DIR=startup
 
   node-bench-sirun-spans-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - SIRUN_TEST_DIR=spans
 
   node-bench-sirun-async-hooks:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - SIRUN_TEST_DIR=async_hooks
 
   node-bench-sirun-encoders-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - SIRUN_TEST_DIR=encoding
 
   node-bench-sirun-plugin-q-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - PLUGINS=q
           - SIRUN_TEST_DIR=plugin-q
@@ -323,7 +323,7 @@ jobs:
   node-bench-sirun-plugin-bluebird-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - PLUGINS=bluebird
           - SIRUN_TEST_DIR=plugin-bluebird
@@ -331,7 +331,7 @@ jobs:
   node-bench-sirun-plugin-http-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - PLUGINS=http
           - SIRUN_TEST_DIR=plugin-http
@@ -339,27 +339,27 @@ jobs:
   node-bench-sirun-scope-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - SIRUN_TEST_DIR=scope
 
   node-bench-sirun-exporting-pipeline-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - SIRUN_TEST_DIR=exporting-pipeline
 
   node-bench-sirun-plugin-net-latest:
     <<: *node-bench-sirun-base
     docker:
-      - image: node
+      - image: node:16.2.0
         environment:
           - SIRUN_TEST_DIR=plugin-net
 
   node-bench-sirun-all:
     docker:
-      - image: node
+      - image: node:16.2.0
     working_directory: ~/dd-trace-js
     resource_class: small
     steps:
