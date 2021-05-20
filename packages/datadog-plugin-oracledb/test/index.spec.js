@@ -16,6 +16,7 @@ describe('Plugin', () => {
   let oracledb
   let connection
   let pool
+  let tracer
 
   describe('oracledb', () => {
     withVersions(plugin, 'oracledb', version => {
@@ -23,6 +24,7 @@ describe('Plugin', () => {
         before(async () => {
           await agent.load('oracledb')
           oracledb = require(`../../../versions/oracledb@${version}`).get()
+          tracer = require('../../dd-trace')
         })
         after(async () => {
           await agent.close()
@@ -52,11 +54,6 @@ describe('Plugin', () => {
           })
 
           it('should be instrumented for callback API', done => {
-            let callbackRan
-            connection.execute(dbQuery, err => {
-              expect(err).to.be.null
-              callbackRan = true
-            })
             agent.use(traces => {
               expect(traces[0][0]).to.have.property('name', 'oracle.query')
               expect(traces[0][0]).to.have.property('resource', dbQuery)
@@ -67,8 +64,41 @@ describe('Plugin', () => {
               expect(traces[0][0].meta).to.have.property('db.instance', 'xepdb1')
               expect(traces[0][0].meta).to.have.property('db.hostname', 'localhost')
               expect(traces[0][0].meta).to.have.property('db.port', '1521')
-              expect(callbackRan).to.be.true
             }).then(done, done)
+
+            connection.execute(dbQuery, err => err && done(err))
+          })
+
+          it('should restore the parent context in the callback', done => {
+            if (process.env.DD_CONTEXT_PROPAGATION === 'false') return done()
+
+            connection.execute(dbQuery, () => {
+              expect(tracer.scope().active()).to.be.null
+              done()
+            })
+          })
+
+          it('should instrument errors', done => {
+            let error
+
+            agent.use(traces => {
+              expect(traces[0][0]).to.have.property('name', 'oracle.query')
+              expect(traces[0][0]).to.have.property('resource', dbQuery)
+              expect(traces[0][0]).to.have.property('type', 'sql')
+              expect(traces[0][0].meta).to.have.property('service', 'test')
+              expect(traces[0][0].meta).to.have.property('span.kind', 'client')
+              expect(traces[0][0].meta).to.have.property('sql.query', 'invalid')
+              expect(traces[0][0].meta).to.have.property('db.instance', 'xepdb1')
+              expect(traces[0][0].meta).to.have.property('db.hostname', 'localhost')
+              expect(traces[0][0].meta).to.have.property('db.port', '1521')
+              expect(traces[0][0].meta).to.have.property('error.msg', error.message)
+              expect(traces[0][0].meta).to.have.property('error.type', error.name)
+              expect(traces[0][0].meta).to.have.property('error.stack', error.stack)
+            }).then(done, done)
+
+            connection.execute('invalid', err => {
+              error = err
+            })
           })
         })
 
