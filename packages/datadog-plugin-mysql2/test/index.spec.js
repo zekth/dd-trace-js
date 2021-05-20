@@ -42,7 +42,7 @@ describe('Plugin', () => {
           connection.end(done)
         })
 
-        it('should propagate context to callbacks', done => {
+        it('should propagate context to callbacks, with correct callback args', done => {
           if (process.env.DD_CONTEXT_PROPAGATION === 'false') return done()
 
           const span = tracer.startSpan('test')
@@ -50,7 +50,9 @@ describe('Plugin', () => {
           tracer.scope().activate(span, () => {
             const span = tracer.scope().active()
 
-            connection.query('SELECT 1 + 1 AS solution', () => {
+            connection.query('SELECT 1 + 1 AS solution', (err, results, fields) => {
+              expect(results).to.not.be.null
+              expect(fields).to.not.be.null
               expect(tracer.scope().active()).to.equal(span)
               done()
             })
@@ -83,6 +85,7 @@ describe('Plugin', () => {
               expect(traces[0][0]).to.have.property('service', 'test-mysql')
               expect(traces[0][0]).to.have.property('resource', 'SELECT 1 + 1 AS solution')
               expect(traces[0][0]).to.have.property('type', 'sql')
+              expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('db.name', 'db')
               expect(traces[0][0].meta).to.have.property('db.user', 'root')
               expect(traces[0][0].meta).to.have.property('db.type', 'mysql')
@@ -102,6 +105,7 @@ describe('Plugin', () => {
               expect(traces[0][0]).to.have.property('service', 'test-mysql')
               expect(traces[0][0]).to.have.property('resource', 'SELECT ? + ? AS solution')
               expect(traces[0][0]).to.have.property('type', 'sql')
+              expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('db.name', 'db')
               expect(traces[0][0].meta).to.have.property('db.user', 'root')
               expect(traces[0][0].meta).to.have.property('db.type', 'mysql')
@@ -123,6 +127,7 @@ describe('Plugin', () => {
               expect(traces[0][0]).to.have.property('service', 'test-mysql')
               expect(traces[0][0]).to.have.property('resource', 'SELECT ? + ? AS solution')
               expect(traces[0][0]).to.have.property('type', 'sql')
+              expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('db.name', 'db')
               expect(traces[0][0].meta).to.have.property('db.user', 'root')
               expect(traces[0][0].meta).to.have.property('db.type', 'mysql')
@@ -239,6 +244,7 @@ describe('Plugin', () => {
               expect(traces[0][0]).to.have.property('service', 'test-mysql')
               expect(traces[0][0]).to.have.property('resource', 'SELECT 1 + 1 AS solution')
               expect(traces[0][0]).to.have.property('type', 'sql')
+              expect(traces[0][0].meta).to.have.property('span.kind', 'client')
               expect(traces[0][0].meta).to.have.property('db.user', 'root')
               expect(traces[0][0].meta).to.have.property('db.type', 'mysql')
               expect(traces[0][0].meta).to.have.property('span.kind', 'client')

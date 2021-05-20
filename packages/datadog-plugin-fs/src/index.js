@@ -338,7 +338,7 @@ function makeFSTags (resourceName, path, options, config, tracer) {
 
   switch (typeof path) {
     case 'object': {
-      if (path === null) return
+      if (path === null) return tags
       const src = 'src' in path ? path.src : null
       const dest = 'dest' in path ? path.dest : null
       if (src || dest) {
@@ -497,6 +497,8 @@ function unpatchDirFunctions (fs) {
 module.exports = {
   name: 'fs',
   patch (fs, tracer, config) {
+    const realpathNative = fs.realpath.native
+    const realpathSyncNative = fs.realpathSync.native
     patchClassicFunctions.call(this, fs, tracer, config)
     if (fs.promises) {
       patchFileHandle.call(this, fs, tracer, config)
@@ -509,6 +511,12 @@ module.exports = {
     this.wrap(fs, 'createWriteStream', createWrapCreateWriteStream(config, tracer))
     this.wrap(fs, 'existsSync', createWrap(tracer, config, 'existsSync', createPathTags))
     this.wrap(fs, 'exists', createWrapExists(config, tracer))
+    if (realpathNative) {
+      fs.realpath.native = createWrapCb(tracer, config, 'realpath.native', createPathTags)(realpathNative)
+    }
+    if (realpathSyncNative) {
+      fs.realpathSync.native = createWrap(tracer, config, 'realpath.native', createPathTags)(realpathSyncNative)
+    }
   },
   unpatch (fs) {
     unpatchClassicFunctions.call(this, fs)

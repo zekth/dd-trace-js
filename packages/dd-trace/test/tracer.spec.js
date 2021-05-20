@@ -391,14 +391,17 @@ describe('Tracer', () => {
       })
     })
 
-    it('should accept an options function', () => {
+    it('should accept an options function, invoked on every invocation of the wrapped function', () => {
       const it = {}
 
+      let invocations = 0
+
       function options (foo, bar) {
+        invocations++
         expect(this).to.equal(it)
         expect(foo).to.equal('hello')
         expect(bar).to.equal('goodbye')
-        return { tags: { sometag: 'somevalue' } }
+        return { tags: { sometag: 'somevalue', invocations } }
       }
 
       const fn = tracer.wrap('name', options, function () {})
@@ -408,7 +411,13 @@ describe('Tracer', () => {
       fn.call(it, 'hello', 'goodbye')
 
       expect(tracer.trace).to.have.been.calledWith('name', {
-        tags: { sometag: 'somevalue' }
+        tags: { sometag: 'somevalue', invocations: 1 }
+      })
+
+      fn.call(it, 'hello', 'goodbye')
+
+      expect(tracer.trace).to.have.been.calledWith('name', {
+        tags: { sometag: 'somevalue', invocations: 2 }
       })
     })
 
@@ -479,6 +488,20 @@ describe('Tracer', () => {
 
           expect(tracer.trace).to.have.been.called
         })
+      })
+    })
+
+    describe('when the options object is a function returning a falsy value', () => {
+      it('should trace', () => {
+        const fn = tracer.wrap('name', () => false, () => {})
+
+        sinon.stub(tracer, 'trace').callsFake((_, options) => {
+          expect(options).to.equal(false)
+        })
+
+        fn()
+
+        expect(tracer.trace).to.have.been.called
       })
     })
   })

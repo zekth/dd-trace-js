@@ -6,8 +6,7 @@ const sinonChai = require('sinon-chai')
 const os = require('os')
 const proxyquire = require('../proxyquire')
 const semver = require('semver')
-const platform = require('../../src/platform')
-const node = require('../../src/platform/node')
+const metrics = require('../../src/metrics')
 const AsyncHooksScope = require('../../src/scope/async_hooks')
 const AsyncLocalStorageScope = require('../../src/scope/async_local_storage')
 const AsyncResourceScope = require('../../src/scope/async_resource')
@@ -15,7 +14,7 @@ const agent = require('../plugins/agent')
 const externals = require('../plugins/externals.json')
 
 const defaultScope = semver.satisfies(process.versions.node, '>=14.5 || ^12.19.0')
-  ? 'async_local_storage'
+  ? 'async_resource'
   : 'async_hooks'
 
 const asyncHooksScope = new AsyncHooksScope({
@@ -36,11 +35,9 @@ global.proxyquire = proxyquire
 global.wrapIt = wrapIt
 global.withVersions = withVersions
 
-platform.use(node)
-
 afterEach(() => {
   agent.reset()
-  platform.metrics().stop()
+  metrics.stop()
 })
 
 function wrapIt (whichScope = defaultScope) {

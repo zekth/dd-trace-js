@@ -12,14 +12,9 @@ const tar = require('tar')
 const exec = require('./helpers/exec')
 const title = require('./helpers/title')
 
-title(`Downloading and compiling files for release.`)
+const { CIRCLE_TOKEN } = process.env
 
-if (!process.env.CIRCLE_TOKEN) {
-  throw new Error([
-    'The prepublish script needs to authenticate to CircleCI.',
-    'Please set the CIRCLE_TOKEN environment variable.'
-  ].join(' '))
-}
+title(`Downloading and compiling files for release.`)
 
 const revision = exec.pipe(`git rev-parse HEAD`)
 
@@ -29,12 +24,13 @@ const branch = exec.pipe(`git symbolic-ref --short HEAD`)
 
 console.log(branch)
 
+const headers = CIRCLE_TOKEN ? {
+  'circle-token': CIRCLE_TOKEN
+} : {}
 const client = axios.create({
   baseURL: 'https://circleci.com/api/v2/',
   timeout: 5000,
-  headers: {
-    'Circle-Token': process.env.CIRCLE_TOKEN
-  }
+  headers
 })
 
 const fetch = (url, options) => {
@@ -52,7 +48,6 @@ getPipeline()
   .then(downloadArtifacts)
   .then(validatePrebuilds)
   .then(extractPrebuilds)
-  .then(bundle)
   .catch(e => {
     process.exitCode = 1
     console.error(e)
@@ -78,16 +73,14 @@ function getWorkflow (pipeline) {
     .then(response => {
       const workflows = response.data.items
         .sort((a, b) => (a.stopped_at < b.stopped_at) ? 1 : -1)
-      const running = workflows.find(workflow => !workflow.stopped_at)
-
-      if (running) {
-        throw new Error(`Workflow ${running.id} is still running for pipeline ${pipeline.id}.`)
-      }
-
       const workflow = workflows.find(workflow => workflow.name === 'prebuild')
 
       if (!workflow) {
         throw new Error(`Unable to find CircleCI workflow for pipeline ${pipeline.id}.`)
+      }
+
+      if (!workflow.stopped_at) {
+        throw new Error(`Workflow ${workflow.id} is still running for pipeline ${pipeline.id}.`)
       }
 
       if (workflow.status !== 'success') {
@@ -164,9 +157,4 @@ function extractPrebuilds () {
     file: path.join(os.tmpdir(), 'prebuilds.tgz'),
     cwd: path.join(__dirname, '..')
   })
-}
-
-function bundle () {
-  rimraf.sync('dist')
-  exec('yarn bundle')
 }

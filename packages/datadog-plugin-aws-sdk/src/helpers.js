@@ -6,6 +6,7 @@ const services = {
   cloudwatchlogs: getService('cloudwatchlogs'),
   dynamodb: getService('dynamodb'),
   kinesis: getService('kinesis'),
+  lambda: getService('lambda'),
   s3: getService('s3'),
   redshift: getService('redshift'),
   sns: getService('sns'),
@@ -30,6 +31,18 @@ const helpers = {
     span.finish()
   },
 
+  isEnabled (serviceIdentifier, config, request) {
+    if (typeof config === 'boolean') {
+      return config
+    } else if (!config || typeof config !== 'object' || !services[serviceIdentifier]) {
+      return true
+    }
+
+    return services[serviceIdentifier].isEnabled
+      ? services[serviceIdentifier].isEnabled(config, request)
+      : true
+  },
+
   addResponseTags (span, response, serviceName, config) {
     if (!span) return
 
@@ -48,7 +61,8 @@ const helpers = {
     const extraTags = services[serviceName] ? services[serviceName].generateTags(params, operation, response) : {}
     const tags = Object.assign({
       'aws.response.request_id': response.requestId,
-      'resource.name': operation
+      'resource.name': operation,
+      'span.kind': 'client'
     }, extraTags)
 
     span.addTags(tags)

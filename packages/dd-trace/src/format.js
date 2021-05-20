@@ -7,6 +7,9 @@ const id = require('./id')
 
 const SAMPLING_PRIORITY_KEY = constants.SAMPLING_PRIORITY_KEY
 const ANALYTICS_KEY = constants.ANALYTICS_KEY
+const SAMPLING_RULE_DECISION = constants.SAMPLING_RULE_DECISION
+const SAMPLING_LIMIT_DECISION = constants.SAMPLING_LIMIT_DECISION
+const SAMPLING_AGENT_DECISION = constants.SAMPLING_AGENT_DECISION
 const ANALYTICS = tags.ANALYTICS
 const MEASURED = tags.MEASURED
 const ORIGIN_KEY = constants.ORIGIN_KEY
@@ -22,6 +25,7 @@ function format (span) {
   const formatted = formatSpan(span)
 
   extractError(formatted, span)
+  extractRootTags(formatted, span)
   extractTags(formatted, span)
   extractAnalytics(formatted, span)
 
@@ -53,6 +57,10 @@ function extractTags (trace, span) {
   const priority = context._sampling.priority
   const internalErrors = span.tracer()._internalErrors
 
+  if (tags['span.kind'] && tags['span.kind'] !== 'internal') {
+    addTag({}, trace.metrics, MEASURED, 1)
+  }
+
   for (const tag in tags) {
     switch (tag) {
       case 'service.name':
@@ -71,7 +79,7 @@ function extractTags (trace, span) {
         addTag({}, trace.metrics, tag, tags[tag] === undefined || tags[tag] ? 1 : 0)
         break
       case 'error':
-        if (tags[tag] && (tags['span.kind'] !== 'internal' || internalErrors)) {
+        if (tags[tag] && (context._name !== 'fs.operation' || internalErrors)) {
           trace.error = 1
         }
         break
@@ -79,7 +87,7 @@ function extractTags (trace, span) {
       case 'error.msg':
       case 'error.stack':
         // HACK: remove when implemented in the backend
-        if (tags['span.kind'] !== 'internal' || internalErrors) {
+        if (context._name !== 'fs.operation' || internalErrors) {
           trace.error = 1
         }
       default: // eslint-disable-line no-fallthrough
@@ -96,13 +104,25 @@ function extractTags (trace, span) {
   addTag(trace.meta, trace.metrics, HOSTNAME_KEY, hostname)
 }
 
+function extractRootTags (trace, span) {
+  const context = span.context()
+  const isLocalRoot = span === context._trace.started[0]
+  const parentId = context._parentId
+
+  if (!isLocalRoot || (parentId && parentId.toString(10) !== '0')) return
+
+  addTag({}, trace.metrics, SAMPLING_RULE_DECISION, context._trace[SAMPLING_RULE_DECISION])
+  addTag({}, trace.metrics, SAMPLING_LIMIT_DECISION, context._trace[SAMPLING_LIMIT_DECISION])
+  addTag({}, trace.metrics, SAMPLING_AGENT_DECISION, context._trace[SAMPLING_AGENT_DECISION])
+}
+
 function extractError (trace, span) {
   const error = span.context()._tags['error']
 
   if (error instanceof Error) {
-    trace.meta['error.msg'] = error.message
-    trace.meta['error.type'] = error.name
-    trace.meta['error.stack'] = error.stack
+    addTag(trace.meta, trace.metrics, 'error.msg', error.message)
+    addTag(trace.meta, trace.metrics, 'error.type', error.name)
+    addTag(trace.meta, trace.metrics, 'error.stack', error.stack)
   }
 }
 
@@ -123,6 +143,7 @@ function extractAnalytics (trace, span) {
 function addTag (meta, metrics, key, value, seen) {
   switch (typeof value) {
     case 'string':
+      if (!value) break
       meta[key] = value
       break
     case 'number':

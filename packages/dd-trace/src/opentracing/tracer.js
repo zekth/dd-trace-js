@@ -1,6 +1,7 @@
 'use strict'
 
 const opentracing = require('opentracing')
+const os = require('os')
 const Tracer = opentracing.Tracer
 const Reference = opentracing.Reference
 const Span = require('./span')
@@ -17,7 +18,8 @@ const formats = require('../../../../ext/formats')
 
 const log = require('../log')
 const constants = require('../constants')
-const platform = require('../platform')
+const metrics = require('../metrics')
+const getExporter = require('../exporter')
 
 const REFERENCE_NOOP = constants.REFERENCE_NOOP
 const REFERENCE_CHILD_OF = opentracing.REFERENCE_CHILD_OF
@@ -27,7 +29,7 @@ class DatadogTracer extends Tracer {
   constructor (config) {
     super()
 
-    const Exporter = platform.exporter(config.experimental.exporter)
+    const Exporter = getExporter(config.experimental.exporter)
 
     this._service = config.service
     this._version = config.version
@@ -42,7 +44,6 @@ class DatadogTracer extends Tracer {
     this._processor = new SpanProcessor(this._exporter, this._prioritySampler)
     this._url = this._exporter._url
     this._sampler = new Sampler(config.sampleRate)
-    this._peers = config.experimental.peers
     this._enableGetRumData = config.experimental.enableGetRumData
     this._propagators = {
       [formats.TEXT_MAP]: new TextMapPropagator(config),
@@ -51,25 +52,8 @@ class DatadogTracer extends Tracer {
       [formats.LOG]: new LogPropagator(config)
     }
     if (config.reportHostname) {
-      this._hostname = platform.hostname()
+      this._hostname = os.hostname()
     }
-  }
-
-  startSpan (name, fields) {
-    if (fields) {
-      if (fields.references) {
-        return super.startSpan(name, fields)
-      } else if (fields.childOf) {
-        let parent = fields.childOf
-        if (parent instanceof Span) {
-          parent = parent.context()
-        }
-        if (parent instanceof SpanContext) {
-          return this._startSpanInternal(name, fields, parent, REFERENCE_CHILD_OF)
-        }
-      }
-    }
-    return this._startSpanInternal(name, fields, null, null)
   }
 
   _startSpan (name, fields) {
@@ -97,7 +81,6 @@ class DatadogTracer extends Tracer {
 
     span.addTags(this._tags)
     span.addTags(fields.tags)
-    span.addTags(platform.tags())
 
     return span
   }
@@ -108,7 +91,7 @@ class DatadogTracer extends Tracer {
       this._propagators[format].inject(spanContext, carrier)
     } catch (e) {
       log.error(e)
-      platform.metrics().increment('datadog.tracer.node.inject.errors', true)
+      metrics.increment('datadog.tracer.node.inject.errors', true)
     }
 
     return this
@@ -119,7 +102,7 @@ class DatadogTracer extends Tracer {
       return this._propagators[format].extract(carrier)
     } catch (e) {
       log.error(e)
-      platform.metrics().increment('datadog.tracer.node.extract.errors', true)
+      metrics.increment('datadog.tracer.node.extract.errors', true)
       return null
     }
   }

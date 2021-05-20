@@ -12,6 +12,11 @@ function createWrapRequest (tracer, config) {
       if (!this.service) return send.apply(this, arguments)
 
       const serviceIdentifier = this.service.serviceIdentifier
+
+      if (!awsHelpers.isEnabled(serviceIdentifier, config[serviceIdentifier], this)) {
+        return send.apply(this, arguments)
+      }
+
       const serviceName = getServiceName(serviceIdentifier, tracer, config)
       const childOf = tracer.scope().active()
       const tags = {
@@ -113,7 +118,7 @@ module.exports = [
       this.wrap(AWS.Request.prototype, 'send', createWrapRequest(tracer, config))
     },
     unpatch (AWS) {
-      this.wrap(AWS.Request.prototype, 'send')
+      this.unwrap(AWS.Request.prototype, 'send')
     }
   }
 ]

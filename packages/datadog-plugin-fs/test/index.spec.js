@@ -841,6 +841,23 @@ describe('Plugin', () => {
           testHandleErrors(fs, resource, tested, ['/badfilename'], agent))
       })
 
+      if (realFS.realpath.native) {
+        describeThreeWays('realpath.native', (resource, tested) => {
+          it('should be instrumented', (done) => {
+            expectOneSpan(agent, done, {
+              resource,
+              meta: {
+                'file.path': __filename
+              }
+            })
+            tested(fs, [__filename], done)
+          })
+
+          it('should handle errors', () =>
+            testHandleErrors(fs, resource, tested, ['/badfilename'], agent))
+        })
+      }
+
       describeThreeWays('readlink', (resource, tested) => {
         let link
         beforeEach(() => {
@@ -1311,10 +1328,11 @@ describe('Plugin', () => {
             })
 
             it('should handle errors', () =>
-              testHandleErrors(fs, 'dir.close', (_1, _2, _3, cb) => {
+              testHandleErrors(fs, 'dir.close', async (_1, _2, _3, cb) => {
                 dir.closeSync()
                 try {
-                  dir.close()
+                  // await for Node >=15.4 that returns and rejects a promise instead of throwing
+                  await dir.close()
                 } catch (e) {
                   cb(e)
                 }
@@ -1715,7 +1733,8 @@ describe('Plugin', () => {
       }
 
       function describeThreeWays (name, fn) {
-        if (name in realFS) {
+        const reducer = (acc, cur) => acc[cur]
+        if (name.split('.').reduce(reducer, realFS)) {
           describe(name, () => {
             fn(name, (fs, args, done, withError) => {
               const span = {}
@@ -1727,7 +1746,8 @@ describe('Plugin', () => {
                     else done(err)
                   }
                 })
-                return fs[name].apply(fs, args)
+                const func = name.split('.').reduce((acc, cur) => acc[cur], fs)
+                return func.apply(fs, args)
               })
             })
           })

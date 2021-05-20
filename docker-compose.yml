@@ -1,16 +1,16 @@
-version: '2'
+version: "2"
 services:
   couchbase:
     image: rishabhdev/couchbase-server-sandbox:latest
     ports:
-      - '127.0.0.1:8091-8095:8091-8095'
-      - '127.0.0.1:11210:11210'
+      - "127.0.0.1:8091-8095:8091-8095"
+      - "127.0.0.1:11210:11210"
   postgres:
     image: postgres:9.5-alpine
     environment:
       - POSTGRES_PASSWORD=postgres
     ports:
-      - '127.0.0.1:5432:5432'
+      - "127.0.0.1:5432:5432"
   mssql:
     image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
     environment:
@@ -81,19 +81,44 @@ services:
     ports:
       - "127.0.0.1:8085:8085"
   localstack:
-      image: localstack/localstack
-      ports:
-        - "127.0.0.1:4569:4569"
-        - "127.0.0.1:4568:4568"
-        - "127.0.0.1:4572:4572"
-        - "127.0.0.1:4576:4576"
-        - "127.0.0.1:4575:4575"
-        - "127.0.0.1:4580:4580"
-        - "127.0.0.1:4586:4586"
-        - "127.0.0.1:4577:4577"
-      environment:
-        - LOCALSTACK_SERVICES=dynamodb:4569,kinesis:4568,s3:4572,sqs:4576,sns:4575,redshift:4577,route53:4580,logs:4586
-        - EXTRA_CORS_ALLOWED_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
-        - EXTRA_CORS_EXPOSE_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
-        - FORCE_NONINTERACTIVE=true
-        - START_WEB=0
+    image: localstack/localstack:0.11.2
+    ports:
+      - "127.0.0.1:4569:4569" # DynamoDB
+      - "127.0.0.1:4568:4568" # Kinesis
+      - "127.0.0.1:4572:4572" # S3
+      - "127.0.0.1:4576:4576" # SQS
+      - "127.0.0.1:4575:4575" # SNS
+      - "127.0.0.1:4580:4580" # Route53
+      - "127.0.0.1:4586:4586" # CloudWatch Logs
+      - "127.0.0.1:4577:4577" # Redshift
+    environment:
+      - LOCALSTACK_SERVICES=dynamodb,kinesis,s3,sqs,sns,redshift,route53,logs
+      - EXTRA_CORS_ALLOWED_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
+      - EXTRA_CORS_EXPOSE_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
+      - FORCE_NONINTERACTIVE=true
+      - START_WEB=0
+      - EDGE_PORT=4565
+  serverless_localstack:
+    image: localstack/localstack:0.12.4
+    ports:
+      - "127.0.0.1:4566:4566" # Edge
+    environment:
+      - LOCALSTACK_SERVICES=serverless
+      - EXTRA_CORS_ALLOWED_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
+      - EXTRA_CORS_EXPOSE_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
+      - FORCE_NONINTERACTIVE=true
+      - START_WEB=0
+      - LAMBDA_EXECUTOR=local
+      - DEBUG=true
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+  zookeeper:
+    image: wurstmeister/zookeeper
+  kafka:
+    image: wurstmeister/kafka
+    ports:
+      - "127.0.0.1:9092:9092"
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+      KAFKA_CREATE_TOPICS: "test-topic:1:1"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181

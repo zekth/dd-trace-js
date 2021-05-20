@@ -284,10 +284,10 @@ function getStatusValidator (config) {
 }
 
 function getFilter (tracer, config) {
-  const blacklist = tracer._url ? [getAgentFilter(tracer._url)] : []
+  const blocklist = tracer._url ? [getAgentFilter(tracer._url)] : []
 
   config = Object.assign({}, config, {
-    blacklist: blacklist.concat(config.blacklist || [])
+    blocklist: blocklist.concat(config.blocklist || [])
   })
 
   return urlFilter.getFilter(config)
@@ -297,7 +297,7 @@ function getAgentFilter (url) {
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
   const agentFilter = url.href.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-  return RegExp(`^${agentFilter}/.*$`, 'i')
+  return RegExp(`^${agentFilter}.*$`, 'i')
 }
 
 function normalizeConfig (tracer, config) {

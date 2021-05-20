@@ -10,6 +10,9 @@ const ANALYTICS = tags.ANALYTICS
 const MEASURED = tags.MEASURED
 const ORIGIN_KEY = constants.ORIGIN_KEY
 const HOSTNAME_KEY = constants.HOSTNAME_KEY
+const SAMPLING_AGENT_DECISION = constants.SAMPLING_AGENT_DECISION
+const SAMPLING_LIMIT_DECISION = constants.SAMPLING_LIMIT_DECISION
+const SAMPLING_RULE_DECISION = constants.SAMPLING_RULE_DECISION
 
 const spanId = id('0234567812345678')
 
@@ -18,7 +21,6 @@ describe('format', () => {
   let span
   let trace
   let spanContext
-  let platform
 
   beforeEach(() => {
     spanContext = {
@@ -28,7 +30,9 @@ describe('format', () => {
       _tags: {},
       _metrics: {},
       _sampling: {},
-      _trace: {},
+      _trace: {
+        started: []
+      },
       _name: 'operation'
     }
 
@@ -41,13 +45,9 @@ describe('format', () => {
       _duration: 100
     }
 
-    platform = {
-      hostname: sinon.stub().returns('my_hostname')
-    }
+    spanContext._trace.started.push(span)
 
-    format = proxyquire('../src/format', {
-      './platform': platform
-    })
+    format = require('../src/format')
   })
 
   describe('format', () => {
@@ -89,6 +89,35 @@ describe('format', () => {
       expect(trace.service).to.equal('service')
       expect(trace.type).to.equal('type')
       expect(trace.resource).to.equal('resource')
+    })
+
+    it('should extract Datadog specific root tags', () => {
+      spanContext._parentId = null
+      spanContext._trace[SAMPLING_AGENT_DECISION] = 0.8
+      spanContext._trace[SAMPLING_LIMIT_DECISION] = 0.2
+      spanContext._trace[SAMPLING_RULE_DECISION] = 0.5
+
+      trace = format(span)
+
+      expect(trace.metrics).to.include({
+        [SAMPLING_AGENT_DECISION]: 0.8,
+        [SAMPLING_LIMIT_DECISION]: 0.2,
+        [SAMPLING_RULE_DECISION]: 0.5
+      })
+    })
+
+    it('should not extract Datadog specific root tags from non-root spans', () => {
+      spanContext._trace[SAMPLING_AGENT_DECISION] = 0.8
+      spanContext._trace[SAMPLING_LIMIT_DECISION] = 0.2
+      spanContext._trace[SAMPLING_RULE_DECISION] = 0.5
+
+      trace = format(span)
+
+      expect(trace.metrics).to.not.have.keys(
+        SAMPLING_AGENT_DECISION,
+        SAMPLING_LIMIT_DECISION,
+        SAMPLING_RULE_DECISION
+      )
     })
 
     it('should discard user-defined tags with name HOSTNAME_KEY by default', () => {
@@ -153,6 +182,19 @@ describe('format', () => {
       expect(trace.meta['error.msg']).to.equal(error.message)
       expect(trace.meta['error.type']).to.equal(error.name)
       expect(trace.meta['error.stack']).to.equal(error.stack)
+    })
+
+    it('should skip error properties without a value', () => {
+      const error = new Error('boom')
+
+      error.name = null
+      error.stack = null
+      spanContext._tags['error'] = error
+      trace = format(span)
+
+      expect(trace.meta['error.msg']).to.equal(error.message)
+      expect(trace.meta).to.not.have.property('error.type')
+      expect(trace.meta).to.not.have.property('error.stack')
     })
 
     it('should extract the origin', () => {
@@ -258,7 +300,7 @@ describe('format', () => {
       spanContext._tags['error.type'] = 'Error'
       spanContext._tags['error.msg'] = 'boom'
       spanContext._tags['error.stack'] = ''
-      spanContext._tags['span.kind'] = 'internal'
+      spanContext._name = 'fs.operation'
 
       trace = format(span)
 
@@ -267,7 +309,7 @@ describe('format', () => {
 
     it('should not set the error flag for internal spans with error tag', () => {
       spanContext._tags['error'] = new Error('boom')
-      spanContext._tags['span.kind'] = 'internal'
+      spanContext._name = 'fs.operation'
 
       trace = format(span)
 
@@ -500,6 +542,30 @@ describe('format', () => {
       spanContext._tags[MEASURED] = undefined
       trace = format(span)
       expect(trace.metrics[MEASURED]).to.equal(1)
+    })
+
+    it('should not measure internal spans', () => {
+      spanContext._tags['span.kind'] = 'internal'
+      trace = format(span)
+      expect(trace.metrics).to.not.have.property(MEASURED)
+    })
+
+    it('should not measure unknown spans', () => {
+      trace = format(span)
+      expect(trace.metrics).to.not.have.property(MEASURED)
+    })
+
+    it('should measure non-internal spans', () => {
+      spanContext._tags['span.kind'] = 'server'
+      trace = format(span)
+      expect(trace.metrics[MEASURED]).to.equal(1)
+    })
+
+    it('should not override explicit measure decision', () => {
+      spanContext._tags[MEASURED] = 0
+      spanContext._tags['span.kind'] = 'server'
+      trace = format(span)
+      expect(trace.metrics[MEASURED]).to.equal(0)
     })
   })
 })

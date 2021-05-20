@@ -145,12 +145,15 @@ function wrapResolve (resolve, tracer, config) {
     if (!contextValue._datadog_graphql) return resolve.apply(this, arguments)
 
     const path = responsePathAsArray(info && info.path)
-    const depth = path.filter(item => typeof item === 'string').length
 
-    if (config.depth >= 0 && config.depth < depth) {
-      const parent = getParentField(tracer, contextValue, path)
+    if (config.depth >= 0) {
+      const depth = path.filter(item => typeof item === 'string').length
 
-      return call(resolve, parent.span, this, arguments)
+      if (config.depth < depth) {
+        const parent = getParentField(tracer, contextValue, path)
+
+        return call(resolve, parent.span, this, arguments)
+      }
     }
 
     const field = assertField(tracer, config, contextValue, info, path)
@@ -237,7 +240,8 @@ function addExecutionTags (span, config, operation, document, operationName) {
   const type = operation && operation.operation
   const name = operation && operation.name && operation.name.value
   const tags = {
-    'resource.name': getSignature(document, name, type, config.signature)
+    'resource.name': getSignature(document, name, type, config.signature),
+    'span.kind': 'server'
   }
 
   if (type) {

@@ -2,7 +2,7 @@
 
 const Span = require('opentracing').Span
 
-module.exports = factory => {
+module.exports = (factory, supportsAsync = true) => {
   let scope
   let span
 
@@ -44,72 +44,74 @@ module.exports = factory => {
       expect(scope.active()).to.be.null
     })
 
-    it('should persist through setTimeout', done => {
-      scope.activate(span, () => {
-        setTimeout(() => {
-          expect(scope.active()).to.equal(span)
-          done()
-        }, 0)
-      })
-    })
-
-    it('should persist through setImmediate', done => {
-      scope.activate(span, () => {
-        setImmediate(() => {
-          expect(scope.active()).to.equal(span)
-          done()
-        }, 0)
-      })
-    })
-
-    it('should persist through setInterval', done => {
-      scope.activate(span, () => {
-        let shouldReturn = false
-
-        const timer = setInterval(() => {
-          expect(scope.active()).to.equal(span)
-
-          if (shouldReturn) {
-            clearInterval(timer)
-            return done()
-          }
-
-          shouldReturn = true
-        }, 0)
-      })
-    })
-
-    if (global.process && global.process.nextTick) {
-      it('should persist through process.nextTick', done => {
+    if (supportsAsync) {
+      it('should persist through setTimeout', done => {
         scope.activate(span, () => {
-          process.nextTick(() => {
+          setTimeout(() => {
             expect(scope.active()).to.equal(span)
             done()
           }, 0)
         })
       })
+
+      it('should persist through setImmediate', done => {
+        scope.activate(span, () => {
+          setImmediate(() => {
+            expect(scope.active()).to.equal(span)
+            done()
+          }, 0)
+        })
+      })
+
+      it('should persist through setInterval', done => {
+        scope.activate(span, () => {
+          let shouldReturn = false
+
+          const timer = setInterval(() => {
+            expect(scope.active()).to.equal(span)
+
+            if (shouldReturn) {
+              clearInterval(timer)
+              return done()
+            }
+
+            shouldReturn = true
+          }, 0)
+        })
+      })
+
+      if (global.process && global.process.nextTick) {
+        it('should persist through process.nextTick', done => {
+          scope.activate(span, () => {
+            process.nextTick(() => {
+              expect(scope.active()).to.equal(span)
+              done()
+            }, 0)
+          })
+        })
+      }
+
+      it('should persist through promises', () => {
+        const promise = Promise.resolve()
+
+        return scope.activate(span, () => {
+          return promise.then(() => {
+            expect(scope.active()).to.equal(span)
+          })
+        })
+      })
+
+      it('should handle concurrency', done => {
+        scope.activate(span, () => {
+          setImmediate(() => {
+            expect(scope.active()).to.equal(span)
+            done()
+          })
+        })
+
+        scope.activate(span, () => {})
+      })
     }
-
-    it('should persist through promises', () => {
-      const promise = Promise.resolve()
-
-      return scope.activate(span, () => {
-        return promise.then(() => {
-          expect(scope.active()).to.equal(span)
-        })
-      })
-    })
-
-    it('should handle concurrency', done => {
-      scope.activate(span, () => {
-        setImmediate(() => {
-          expect(scope.active()).to.equal(span)
-          done()
-        })
-      })
-
-      scope.activate(span, () => {})
-    })
 
     it('should handle errors', () => {
       const error = new Error('boom')
@@ -299,6 +301,43 @@ module.exports = factory => {
         emitter.emit('test')
 
         expect(spy).to.not.have.been.called
+      })
+
+      it('should remove all listeners of a type', () => {
+        const spy = sinon.spy()
+        const spy2 = sinon.spy()
+
+        scope.bind(emitter)
+
+        scope.activate(span, () => {
+          emitter.once('test', spy)
+          emitter.once('test', spy2)
+          emitter.removeAllListeners('test')
+        })
+
+        emitter.emit('test')
+
+        expect(spy).to.not.have.been.called
+        expect(spy2).to.not.have.been.called
+      })
+
+      it('should remove all listeners', () => {
+        const spy = sinon.spy()
+        const spy2 = sinon.spy()
+
+        scope.bind(emitter)
+
+        scope.activate(span, () => {
+          emitter.once('test', spy)
+          emitter.once('test2', spy2)
+          emitter.removeAllListeners()
+        })
+
+        emitter.emit('test')
+        emitter.emit('test2')
+
+        expect(spy).to.not.have.been.called
+        expect(spy2).to.not.have.been.called
       })
     })
 

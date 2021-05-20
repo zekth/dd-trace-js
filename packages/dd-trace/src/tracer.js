@@ -3,8 +3,8 @@
 const Tracer = require('./opentracing/tracer')
 const tags = require('../../../ext/tags')
 const scopes = require('../../../ext/scopes')
-const platform = require('./platform')
-const { setStartupLogConfig } = platform.startupLog
+const getScope = require('./scope')
+const { setStartupLogConfig } = require('./startup-log')
 
 const SPAN_TYPE = tags.SPAN_TYPE
 const RESOURCE_NAME = tags.RESOURCE_NAME
@@ -16,8 +16,10 @@ class DatadogTracer extends Tracer {
   constructor (config) {
     super(config)
 
+    const Scope = getScope(config.scope)
+
     this._scopeManager = getScopeManager(config)
-    this._scope = getScope(config)
+    this._scope = new Scope(config)
     setStartupLogConfig(config)
   }
 
@@ -68,11 +70,12 @@ class DatadogTracer extends Tracer {
     const tracer = this
 
     return function () {
-      if (typeof options === 'function' && typeof fn === 'function') {
-        options = options.apply(this, arguments)
+      let optionsObj = options
+      if (typeof optionsObj === 'function' && typeof fn === 'function') {
+        optionsObj = optionsObj.apply(this, arguments)
       }
 
-      if (options.orphanable === false && !tracer.scope().active()) {
+      if (optionsObj && optionsObj.orphanable === false && !tracer.scope().active()) {
         return fn.apply(this, arguments)
       }
 
@@ -81,7 +84,7 @@ class DatadogTracer extends Tracer {
 
       if (typeof cb === 'function') {
         const scopeBoundCb = tracer.scope().bind(cb)
-        return tracer.trace(name, options, (span, done) => {
+        return tracer.trace(name, optionsObj, (span, done) => {
           arguments[lastArgId] = function (err) {
             done(err)
             return scopeBoundCb.apply(this, arguments)
@@ -90,7 +93,7 @@ class DatadogTracer extends Tracer {
           return fn.apply(this, arguments)
         })
       } else {
-        return tracer.trace(name, options, () => fn.apply(this, arguments))
+        return tracer.trace(name, optionsObj, () => fn.apply(this, arguments))
       }
     }
   }
@@ -156,18 +159,6 @@ function getScopeManager (config) {
   }
 
   return new ScopeManager()
-}
-
-function getScope (config) {
-  let Scope
-
-  if (config.scope === NOOP) {
-    Scope = require('./scope/base')
-  } else {
-    Scope = platform.getScope(config.scope)
-  }
-
-  return new Scope(config)
 }
 
 module.exports = DatadogTracer

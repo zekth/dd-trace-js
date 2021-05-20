@@ -22,12 +22,17 @@ describe('PrioritySampler', () => {
   beforeEach(() => {
     context = {
       _tags: {},
-      _sampling: {}
+      _sampling: {},
+      _trace: {
+        started: []
+      }
     }
 
     span = {
       context: sinon.stub().returns(context)
     }
+
+    context._trace.started.push(span)
 
     sampler = {
       isSampled: sinon.stub(),
@@ -262,7 +267,7 @@ describe('PrioritySampler', () => {
     it('should add metrics for agent sample rate', () => {
       prioritySampler.sample(span)
 
-      expect(context._tags).to.have.property('_dd.agent_psr', 1)
+      expect(context._trace).to.have.property('_dd.agent_psr', 1)
     })
 
     it('should add metrics for rule sample rate', () => {
@@ -271,8 +276,8 @@ describe('PrioritySampler', () => {
       })
       prioritySampler.sample(span)
 
-      expect(context._tags).to.have.property('_dd.rule_psr', 0)
-      expect(context._tags).to.not.have.property('_dd.limit_psr')
+      expect(context._trace).to.have.property('_dd.rule_psr', 0)
+      expect(context._trace).to.not.have.property('_dd.limit_psr')
     })
 
     it('should add metrics for rate limiter sample rate', () => {
@@ -282,18 +287,49 @@ describe('PrioritySampler', () => {
       })
       prioritySampler.sample(span)
 
-      expect(context._tags).to.have.property('_dd.rule_psr', 0.5)
-      expect(context._tags).to.have.property('_dd.limit_psr', 1)
+      expect(context._trace).to.have.property('_dd.rule_psr', 0.5)
+      expect(context._trace).to.have.property('_dd.limit_psr', 1)
     })
 
     it('should ignore empty span', () => {
+      expect(() => {
+        prioritySampler.sample()
+      }).to.not.throw()
       prioritySampler.sample()
+    })
 
-      expect(context._sampling).to.not.have.property('priority')
+    it('should support manual only sampling', () => {
+      prioritySampler.sample(span, false)
+
+      expect(context._sampling.priority).to.be.undefined
+    })
+
+    it('should support noop spans', () => {
+      context._trace.started.length = 0
+
+      prioritySampler.sample(span)
+
+      expect(context._sampling.priority).to.be.undefined
     })
   })
 
   describe('update', () => {
+    let rootSpan
+    let rootContext
+
+    beforeEach(() => {
+      rootContext = {
+        ...context,
+        _tags: {}
+      }
+
+      rootSpan = {
+        context: sinon.stub().returns(rootContext)
+      }
+
+      rootContext._trace.started.unshift(rootSpan)
+    })
+
     it('should update the default rate', () => {
       prioritySampler.update({
         'service:,env:': AUTO_REJECT
@@ -305,10 +341,11 @@ describe('PrioritySampler', () => {
     })
 
     it('should update service rates', () => {
-      context._tags[SERVICE_NAME] = 'hello'
+      rootContext._tags[SERVICE_NAME] = 'foo'
+      context._tags[SERVICE_NAME] = 'bar'
 
       prioritySampler.update({
-        'service:hello,env:test': AUTO_REJECT
+        'service:foo,env:test': AUTO_REJECT
       })
 
       prioritySampler.sample(span)

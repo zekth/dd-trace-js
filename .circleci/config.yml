@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  win: circleci/windows@1.0.0
+  win: circleci/windows@2.2.0
 
 node-core-base: &node-core-base
   resource_class: small
@@ -33,8 +33,15 @@ node-core-base: &node-core-base
       run:
         name: Unit tests
         command: yarn test:core:ci
+    - run:
+        name: Merge coverage report
+        command: yarn cover:merge
     - store_artifacts:
-        path: ./coverage/lcov-report
+        path: ./coverage
+    - persist_to_workspace:
+        root: ~/dd-trace-js
+        paths:
+          - .nyc_merge/*
 
 node-bench-base: &node-bench-base
   resource_class: small
@@ -61,6 +68,48 @@ node-bench-e2e-base: &node-bench-e2e-base
     - run:
         name: E2E Benchmark
         command: yarn bench:e2e
+
+node-bench-sirun-base: &node-bench-sirun-base
+  resource_class: small
+  working_directory: ~/dd-trace-js
+  steps:
+    - checkout
+    - *yarn-versions
+    - *restore-yarn-cache
+    - *yarn-install
+    - *save-yarn-cache
+    - run:
+        name: Install dependencies
+        command: "[[ -n $PLUGINS ]] && node ./scripts/install_plugin_modules || exit 0"
+    - run:
+        name: Install system deps
+        command: apt-get update && apt-get install -y valgrind wget
+    - run:
+        name: Install sirun
+        command: wget https://github.com/DataDog/sirun/releases/download/v0.1.7/sirun-v0.1.7-x86_64-unknown-linux-gnu.tar.gz && tar zxf sirun-v0.1.7-x86_64-unknown-linux-gnu.tar.gz && mv sirun /usr/bin
+    - run:
+        name: Run sirun
+        command: |
+          cd benchmark/sirun/$SIRUN_TEST_DIR
+          node /root/dd-trace-js/benchmark/sirun/run-all-variants.js | tee ../$CIRCLE_JOB-sirun-output.ndjson
+    - persist_to_workspace:
+        root: ~/dd-trace-js
+        paths:
+          - benchmark/sirun/*-sirun-output.ndjson
+
+
+node-integration-base: &node-integration-base
+  resource_class: small
+  working_directory: ~/dd-trace-js
+  steps:
+    - checkout
+    - *yarn-versions
+    - *restore-yarn-cache
+    - *yarn-install
+    - *save-yarn-cache
+    - run:
+        name: Integration Tests
+        command: yarn test:integration
 
 node-bench-profiler-base: &node-bench-profiler-base
   resource_class: small
@@ -98,8 +147,15 @@ node-plugin-base: &node-plugin-base
     - run:
         name: Unit tests
         command: yarn test:plugins:ci
+    - run:
+        name: Merge coverage report
+        command: yarn cover:merge
     - store_artifacts:
-        path: ./coverage/lcov-report
+        path: ./coverage
+    - persist_to_workspace:
+        root: ~/dd-trace-js
+        paths:
+          - .nyc_merge/*
 
 prebuild-linux-base: &prebuild-linux-base
   docker:
@@ -165,7 +221,9 @@ prebuild-darwin-base: &prebuild-darwin-base
     - *persist-prebuilds
 
 prebuild-win32-base: &prebuild-win32-base
-  executor: win/vs2019
+  executor:
+    name: win/default
+    size: medium
   working_directory: ~/dd-trace-js
   steps:
     - checkout
@@ -226,6 +284,102 @@ jobs:
           - PLUGINS=mongodb-core
       - image: circleci/mongo
 
+  node-bench-sirun-startup-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=startup
+
+  node-bench-sirun-spans-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=spans
+
+  node-bench-sirun-async-hooks:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=async_hooks
+
+  node-bench-sirun-encoders-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=encoding
+
+  node-bench-sirun-plugin-q-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - PLUGINS=q
+          - SIRUN_TEST_DIR=plugin-q
+
+  node-bench-sirun-plugin-bluebird-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - PLUGINS=bluebird
+          - SIRUN_TEST_DIR=plugin-bluebird
+
+  node-bench-sirun-plugin-http-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - PLUGINS=http
+          - SIRUN_TEST_DIR=plugin-http
+
+  node-bench-sirun-scope-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=scope
+
+  node-bench-sirun-exporting-pipeline-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=exporting-pipeline
+
+  node-bench-sirun-plugin-net-latest:
+    <<: *node-bench-sirun-base
+    docker:
+      - image: node
+        environment:
+          - SIRUN_TEST_DIR=plugin-net
+
+  node-bench-sirun-all:
+    docker:
+      - image: node
+    working_directory: ~/dd-trace-js
+    resource_class: small
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/dd-trace-js
+      - *yarn-versions
+      - *restore-yarn-cache
+      - *yarn-install
+      - *save-yarn-cache
+      - run:
+          name: Aggregate sirun output
+          command: |
+            mkdir -p /tmp/artifacts
+            node ~/dd-trace-js/benchmark/sirun/aggregate | tee /tmp/artifacts/summary.json
+            cp ~/dd-trace-js/benchmark/sirun/*.ndjson /tmp/artifacts/
+            node ~/dd-trace-js/benchmark/sirun/diff-recent | tee /tmp/artifacts/diff.json
+      - store_artifacts:
+          path: /tmp/artifacts
+
   # Core tests
 
   node-core-8:
@@ -248,10 +402,10 @@ jobs:
     docker:
       - image: node:14
 
-  node-core-15:
+  node-core-16:
     <<: *node-core-base
     docker:
-      - image: node:15
+      - image: node:16
 
   node-core-latest:
     <<: *node-core-base
@@ -278,7 +432,9 @@ jobs:
   # Windows tests
 
   node-core-windows:
-    executor: win/vs2019
+    executor:
+      name: win/default
+      size: medium
     working_directory: ~/dd-trace-js
     steps:
       - checkout
@@ -288,6 +444,38 @@ jobs:
       - *save-yarn-cache
       - *yarn-rebuild
       - *yarn-test-core
+
+  # Integration tests
+
+  node-integration-8:
+    <<: *node-integration-base
+    docker:
+      - image: node:8
+
+  node-integration-10:
+    <<: *node-integration-base
+    docker:
+      - image: node:10
+
+  node-integration-12:
+    <<: *node-integration-base
+    docker:
+      - image: node:12
+
+  node-integration-14:
+    <<: *node-integration-base
+    docker:
+      - image: node:14
+
+  node-integration-16:
+    <<: *node-integration-base
+    docker:
+      - image: node:16
+
+  node-integration-latest:
+    <<: *node-integration-base
+    docker:
+      - image: node:latest
 
   # Plugin tests
 
@@ -318,14 +506,23 @@ jobs:
     docker:
       - image: node:8
         environment:
-          - SERVICES=aws-sdk
           - PLUGINS=aws-sdk
-      - image: localstack/localstack
+          - SERVICES=localstack
+      - image: localstack/localstack:0.11.2
         environment:
-          - LOCALSTACK_SERVICES=dynamodb:4569,kinesis:4568,s3:4572,sqs:4576,sns:4575,redshift:4577,route53:4580,logs:4586
+          - LOCALSTACK_SERVICES=dynamodb,kinesis,s3,sqs,sns,redshift,route53,logs
           - EXTRA_CORS_ALLOWED_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
           - EXTRA_CORS_EXPOSE_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
           - FORCE_NONINTERACTIVE=true
+          - START_WEB=0
+          - EDGE_PORT=4565
+      - image: localstack/localstack:0.12.4
+        environment:
+          - LOCALSTACK_SERVICES=serverless
+          - EXTRA_CORS_ALLOWED_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
+          - EXTRA_CORS_EXPOSE_HEADERS=x-amz-request-id,x-amzn-requestid,x-amz-id-2
+          - FORCE_NONINTERACTIVE=true
+          - LAMBDA_EXECUTOR=local
           - START_WEB=0
 
   node-bluebird:
@@ -379,7 +576,7 @@ jobs:
   node-elasticsearch:
     <<: *node-plugin-base
     docker:
-      - image: node:8
+      - image: node:10
         environment:
           - SERVICES=elasticsearch
           - PLUGINS=elasticsearch
@@ -430,10 +627,10 @@ jobs:
         environment:
           - PLUGINS=fs
 
-  node-fs-15:
+  node-fs-16:
     <<: *node-plugin-base
     docker:
-      - image: node:15
+      - image: node:16
         environment:
           - PLUGINS=fs
 
@@ -459,6 +656,20 @@ jobs:
           - SERVICES=google-cloud-pubsub
           - PLUGINS=google-cloud-pubsub
       - image: knarz/pubsub-emulator
+
+  node-kafkajs:
+    <<: *node-plugin-base
+    docker:
+      - image: node:10
+        environment:
+          - SERVICES=kafka
+          - PLUGINS=kafkajs
+      - image: wurstmeister/zookeeper
+      - image: wurstmeister/kafka
+        environment:
+          KAFKA_ADVERTISED_HOST_NAME: 127.0.0.1
+          KAFKA_CREATE_TOPICS: "test-topic:1:1"
+          KAFKA_ZOOKEEPER_CONNECT: 127.0.0.1:2181
 
   node-graphql:
     <<: *node-plugin-base
@@ -494,6 +705,13 @@ jobs:
       - image: node:10
         environment:
           - PLUGINS=http2
+
+  node-jest:
+    <<: *node-plugin-base
+    docker:
+      - image: node:10
+        environment:
+          - PLUGINS=jest
 
   node-knex:
     <<: *node-plugin-base
@@ -538,10 +756,17 @@ jobs:
         environment:
           - PLUGINS=microgateway-core
 
+  node-mocha:
+    <<: *node-plugin-base
+    docker:
+      - image: node
+        environment:
+          - PLUGINS=mocha
+
   node-tedious:
     <<: *node-plugin-base
     docker:
-      - image: node:8
+      - image: node:10
         environment:
           - SERVICES=mssql
           - PLUGINS=tedious
@@ -702,15 +927,60 @@ jobs:
       - store_artifacts:
           path: ./docs/out
 
+  # Node upstream tests
+
+  node-upstream-node:
+    resource_class: small
+    working_directory: ~/dd-trace-js
+    docker:
+      - image: node:14
+    steps:
+      - checkout
+      - *yarn-versions
+      - *restore-yarn-cache
+      - *yarn-install
+      - *save-yarn-cache
+      - run:
+          name: Pull the NodeJS repository
+          command: "git clone --depth 1 --branch v14.x https://github.com/nodejs/node.git ~/node"
+      - run:
+          name: Run test script
+          command: node node-upstream-tests/node/run_tests.js
+          environment:
+            NODE_REPO_PATH: "/root/node"
+            NODE_BIN: "/usr/local/bin/node"
+
+  # Code coverage
+
+  codecov:
+    docker:
+      - image: node
+    working_directory: ~/dd-trace-js
+    resource_class: small
+    steps:
+      - checkout
+      - *yarn-versions
+      - *restore-yarn-cache
+      - *yarn-install
+      - *save-yarn-cache
+      - attach_workspace:
+          at: ~/dd-trace-js
+      - run:
+          name: Build code coverage report
+          command: yarn cover:report
+      - run:
+          name: Submit code coverage report
+          command: yarn codecov
+
   # Prebuilds (linux x64)
 
-  linux-x64-15:
+  linux-x64-16:
     <<: *prebuild-linux-base
     docker:
       - image: node:12.0.0
     environment:
       - ARCH=x64
-      - NODE_VERSIONS=15
+      - NODE_VERSIONS=15 - 16
 
   linux-x64-14:
     <<: *prebuild-linux-base
@@ -740,10 +1010,10 @@ jobs:
 
   ## Tests
 
-  linux-x64-15-test:
+  linux-x64-16-test:
     <<: *test-prebuild-linux-base
     docker:
-      - image: node:15
+      - image: node:16
 
   linux-x64-14-test:
     <<: *test-prebuild-linux-base
@@ -775,7 +1045,7 @@ jobs:
     steps:
       - run:
           name: Install job dependencies
-          command: apk add g++ git make python
+          command: apk add g++ git make python3
       - checkout
       - *yarn-versions
       - *restore-yarn-cache
@@ -837,6 +1107,12 @@ jobs:
 
   # Prebuilds (darwin x64)
 
+  mac-x64-16:
+    <<: *prebuild-darwin-base
+    environment:
+      - ARCH=x64
+      - NODE_VERSIONS=16
+
   mac-x64-14:
     <<: *prebuild-darwin-base
     environment:
@@ -862,6 +1138,12 @@ jobs:
       - NODE_VERSIONS=8 - 9
 
   # Prebuilds (darwin ia32)
+
+  mac-ia32-16:
+    <<: *prebuild-darwin-base
+    environment:
+      - ARCH=ia32
+      - NODE_VERSIONS=16
 
   mac-ia32-14:
     <<: *prebuild-darwin-base
@@ -889,6 +1171,12 @@ jobs:
 
   # Prebuilds (win32 x64)
 
+  win-x64-16:
+    <<: *prebuild-win32-base
+    environment:
+      - ARCH=x64
+      - NODE_VERSIONS=16
+
   win-x64-14:
     <<: *prebuild-win32-base
     environment:
@@ -914,6 +1202,12 @@ jobs:
       - NODE_VERSIONS=8 - 9
 
   # Prebuilds (win32 ia32)
+
+  win-ia32-16:
+    <<: *prebuild-win32-base
+    environment:
+      - ARCH=ia32
+      - NODE_VERSIONS=16
 
   win-ia32-14:
     <<: *prebuild-win32-base
@@ -962,107 +1256,166 @@ jobs:
       - store_artifacts:
           path: ./prebuilds.tgz.sha1
 
-  # Browser
-
-  browser:
-    docker:
-      - image: circleci/node:10-browsers
-    resource_class: small
-    working_directory: ~/dd-trace-js
-    steps:
-      - checkout
-      - *yarn-versions
-      - *restore-yarn-cache
-      - *yarn-install
-      - *save-yarn-cache
-      - run:
-          name: Integration tests
-          command: yarn test:browser
-
-  browserstack:
-    docker:
-      - image: circleci/node:10-browsers
-    resource_class: small
-    working_directory: ~/dd-trace-js
-    steps:
-      - checkout
-      - *yarn-versions
-      - *restore-yarn-cache
-      - *yarn-install
-      - *save-yarn-cache
-      - run:
-          name: Integration tests
-          command: yarn test:browserstack
-
 workflows:
   version: 2
   build:
     jobs:
       - lint
-      # - typescript
-      # - browser
-      # - browserstack
-      # - node-core-8
-      # - node-core-10
-      # - node-core-12
-      # - node-core-14
-      # - node-core-15
-      # - node-core-latest
-      # - node-core-windows
-      # - node-bench-latest
-      # - node-bench-profiler-latest
-      # - node-bench-e2e-latest
-      # - node-amqplib
-      # - node-amqp10
-      # # - node-aws-sdk
-      # - node-bluebird
-      # - node-bunyan
-      # - node-cassandra
-      # - node-connect
-      # - node-couchbase
-      # - node-dns
-      # - node-elasticsearch
-      # - node-express
-      # - node-fastify
-      # - node-fs-8
-      # - node-fs-10
-      # - node-fs-12
-      # - node-fs-14
-      # - node-fs-15
-      # - node-fs-latest
-      # - node-generic-pool
-      # - node-google-cloud-pubsub
-      # - node-graphql
-      # - node-grpc
-      # - node-hapi
-      # - node-http
-      # - node-http2
-      # - node-knex
-      # - node-koa
-      # # - node-limitd-client
-      # - node-memcached
-      # - node-microgateway-core
-      # - node-mongodb-core
-      # - node-mongoose
-      # - node-mysql
-      - node-oracledb
-      # - node-net
-      # - node-paperplane
-      # - node-pino
-      # - node-postgres
-      # - node-promise-js
-      # - node-promise
-      # - node-q
-      # - node-redis
-      # - node-restify
-      # - node-router
-      # - node-tedious
-      # - node-when
-      # - node-winston
+      - typescript
+      - node-core-8
+      - node-core-10
+      - node-core-12
+      - node-core-14
+      - node-core-16
+      - node-core-latest
+      - node-core-windows
+      - node-integration-8
+      - node-integration-10
+      - node-integration-12
+      - node-integration-14
+      - node-integration-16
+      - node-integration-latest
+      - node-amqplib
+      - node-amqp10
+      - node-aws-sdk
+      - node-bluebird
+      - node-bunyan
+      - node-cassandra
+      - node-connect
+      - node-couchbase
+      - node-dns
+      - node-elasticsearch
+      - node-express
+      - node-fastify
+      - node-fs-8
+      - node-fs-10
+      - node-fs-12
+      - node-fs-14
+      - node-fs-16
+      - node-fs-latest
+      - node-generic-pool
+      - node-google-cloud-pubsub
+      - node-graphql
+      - node-grpc
+      - node-hapi
+      - node-http
+      - node-http2
+      - node-jest
+      - node-kafkajs
+      - node-knex
+      - node-koa
+      # - node-limitd-client
+      - node-memcached
+      - node-microgateway-core
+      - node-mocha
+      - node-mongodb-core
+      - node-mongoose
+      - node-mysql
+      - node-net
+      - node-paperplane
+      - node-pino
+      - node-postgres
+      - node-promise-js
+      - node-promise
+      - node-q
+      - node-redis
+      - node-restify
+      - node-router
+      - node-tedious
+      - node-when
+      - node-winston
+      - codecov:
+          requires:
+            - node-core-8
+            - node-core-10
+            - node-core-12
+            - node-core-14
+            - node-core-16
+            - node-core-latest
+            - node-amqplib
+            - node-amqp10
+            - node-aws-sdk
+            - node-bluebird
+            - node-bunyan
+            - node-cassandra
+            - node-connect
+            - node-couchbase
+            - node-dns
+            - node-elasticsearch
+            - node-express
+            - node-fastify
+            - node-fs-8
+            - node-fs-10
+            - node-fs-12
+            - node-fs-14
+            - node-fs-16
+            - node-fs-latest
+            - node-generic-pool
+            - node-google-cloud-pubsub
+            - node-graphql
+            - node-grpc
+            - node-hapi
+            - node-http
+            - node-http2
+            - node-jest
+            - node-kafkajs
+            - node-knex
+            - node-koa
+            # - node-limitd-client
+            - node-memcached
+            - node-microgateway-core
+            - node-mocha
+            - node-mongodb-core
+            - node-mongoose
+            - node-mysql
+            - node-net
+            - node-paperplane
+            - node-pino
+            - node-postgres
+            - node-promise-js
+            - node-promise
+            - node-q
+            - node-redis
+            - node-restify
+            - node-router
+            - node-tedious
+            - node-when
+            - node-winston
+  bench:
+    jobs:
+      - node-bench-latest
+      - node-bench-profiler-latest
+      - node-bench-e2e-latest
+      - node-bench-sirun-startup-latest
+      - node-bench-sirun-spans-latest
+      - node-bench-sirun-async-hooks
+      - node-bench-sirun-encoders-latest
+      - node-bench-sirun-plugin-q-latest
+      - node-bench-sirun-plugin-bluebird-latest
+      - node-bench-sirun-plugin-http-latest
+      - node-bench-sirun-plugin-net-latest
+      - node-bench-sirun-scope-latest
+      - node-bench-sirun-exporting-pipeline-latest
+      - node-bench-sirun-all:
+          requires:
+            - node-bench-sirun-startup-latest
+            - node-bench-sirun-spans-latest
+            - node-bench-sirun-async-hooks
+            - node-bench-sirun-encoders-latest
+            - node-bench-sirun-plugin-q-latest
+            - node-bench-sirun-plugin-bluebird-latest
+            - node-bench-sirun-plugin-http-latest
+            - node-bench-sirun-plugin-net-latest
+            - node-bench-sirun-scope-latest
+            - node-bench-sirun-exporting-pipeline-latest
+  upstream:
+    jobs:
+      - node-upstream-node
+
   prebuild:
     jobs:
       # Linux x64
-      - linux-x64-15:
+      - linux-x64-16:
           <<: *prebuild-job
       - linux-x64-14:
           <<: *prebuild-job
@@ -1072,9 +1425,9 @@ workflows:
           <<: *prebuild-job
       - linux-x64-8:
           <<: *prebuild-job
-      - linux-x64-15-test:
+      - linux-x64-16-test:
           requires:
-            - linux-x64-15
+            - linux-x64-16
       - linux-x64-14-test:
           requires:
             - linux-x64-14
@@ -1151,7 +1504,7 @@ workflows:
       # Artifacts
       - prebuilds:
           requires:
-            - linux-x64-15-test
+            - linux-x64-16-test
             - linux-x64-14-test
             - linux-x64-12-test
             - linux-x64-10-test
@@ -1187,22 +1540,24 @@ workflows:
               only:
                 - master
     jobs:
-      - browser
-      - browserstack
       - node-core-8
       - node-core-10
       - node-core-12
       - node-core-14
-      - node-core-15
+      - node-core-16
       - node-core-latest
       - node-core-windows
-      - node-bench-latest
-      - node-bench-profiler-latest
-      - node-bench-e2e-latest
+      - node-integration-8
+      - node-integration-10
+      - node-integration-12
+      - node-integration-14
+      - node-integration-16
+      - node-integration-latest
       - node-amqplib
       - node-amqp10
-      # - node-aws-sdk
+      - node-aws-sdk
       - node-bluebird
+      - node-http
       - node-bunyan
       - node-cassandra
       - node-connect
@@ -1215,7 +1570,7 @@ workflows:
       - node-fs-10
       - node-fs-12
       - node-fs-14
-      - node-fs-15
+      - node-fs-16
       - node-fs-latest
       - node-generic-pool
       - node-google-cloud-pubsub
@@ -1224,11 +1579,14 @@ workflows:
       - node-hapi
       - node-http
       - node-http2
+      - node-jest
+      - node-kafkajs
       - node-knex
       - node-koa
       # - node-limitd-client
       - node-memcached
       - node-microgateway-core
+      - node-mocha
       - node-mongodb-core
       - node-mongoose
       - node-mysql
@@ -1246,3 +1604,47 @@ workflows:
       - node-tedious
       - node-when
       - node-winston
+  nightly-bench:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - node-bench-latest
+      - node-bench-profiler-latest
+      - node-bench-e2e-latest
+      - node-bench-sirun-startup-latest
+      - node-bench-sirun-spans-latest
+      - node-bench-sirun-async-hooks
+      - node-bench-sirun-encoders-latest
+      - node-bench-sirun-plugin-q-latest
+      - node-bench-sirun-plugin-bluebird-latest
+      - node-bench-sirun-plugin-http-latest
+      - node-bench-sirun-plugin-net-latest
+      - node-bench-sirun-scope-latest
+      - node-bench-sirun-exporting-pipeline-latest
+      - node-bench-sirun-all:
+          requires:
+            - node-bench-sirun-startup-latest
+            - node-bench-sirun-spans-latest
+            - node-bench-sirun-async-hooks
+            - node-bench-sirun-encoders-latest
+            - node-bench-sirun-plugin-q-latest
+            - node-bench-sirun-plugin-bluebird-latest
+            - node-bench-sirun-plugin-http-latest
+            - node-bench-sirun-plugin-net-latest
+            - node-bench-sirun-scope-latest
+            - node-bench-sirun-exporting-pipeline-latest
+  nightly-upstream:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - node-upstream-node

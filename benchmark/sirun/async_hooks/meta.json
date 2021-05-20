@@ -1,0 +1,11 @@
+{
+  "name": "async_hooks",
+  "run": "node -r ../monitor .",
+  "cachegrind": true,
+  "iterations": 5,
+  "variants": {
+    "no-hooks": { "env": { "ASYNC_HOOKS": "" } },
+    "init-only": { "env": { "ASYNC_HOOKS": "init" } },
+    "all-hooks": { "env": { "ASYNC_HOOKS": "init,before,after,destroy,promiseResolve" } }
+  }
+}
