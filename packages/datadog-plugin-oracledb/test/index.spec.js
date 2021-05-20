@@ -1,4 +1,5 @@
-const { expect } = require('chai')
+'use strict'
+
 const agent = require('../../dd-trace/test/plugins/agent')
 const plugin = require('../src')
 
@@ -83,7 +84,7 @@ describe('Plugin', () => {
 
             agent.use(traces => {
               expect(traces[0][0]).to.have.property('name', 'oracle.query')
-              expect(traces[0][0]).to.have.property('resource', dbQuery)
+              expect(traces[0][0]).to.have.property('resource', 'invalid')
               expect(traces[0][0]).to.have.property('type', 'sql')
               expect(traces[0][0].meta).to.have.property('service', 'test')
               expect(traces[0][0].meta).to.have.property('span.kind', 'client')
@@ -125,6 +126,39 @@ describe('Plugin', () => {
               expect(traces[0][0].meta).to.have.property('db.port', '1521')
             }).then(done, done)
             connection.execute(dbQuery)
+          })
+
+          it('should restore the parent context in the callback', () => {
+            if (process.env.DD_CONTEXT_PROPAGATION === 'false') return
+
+            return connection.execute(dbQuery).then(() => {
+              expect(tracer.scope().active()).to.be.null
+            })
+          })
+
+          it('should instrument errors', () => {
+            let error
+
+            const promise = agent.use(traces => {
+              expect(traces[0][0]).to.have.property('name', 'oracle.query')
+              expect(traces[0][0]).to.have.property('resource', 'invalid')
+              expect(traces[0][0]).to.have.property('type', 'sql')
+              expect(traces[0][0].meta).to.have.property('service', 'test')
+              expect(traces[0][0].meta).to.have.property('span.kind', 'client')
+              expect(traces[0][0].meta).to.have.property('sql.query', 'invalid')
+              expect(traces[0][0].meta).to.have.property('db.instance', 'xepdb1')
+              expect(traces[0][0].meta).to.have.property('db.hostname', 'localhost')
+              expect(traces[0][0].meta).to.have.property('db.port', '1521')
+              expect(traces[0][0].meta).to.have.property('error.msg', error.message)
+              expect(traces[0][0].meta).to.have.property('error.type', error.name)
+              expect(traces[0][0].meta).to.have.property('error.stack', error.stack)
+            })
+
+            connection.execute('invalid').catch(err => {
+              error = err
+            })
+
+            return promise
           })
         })
       })
