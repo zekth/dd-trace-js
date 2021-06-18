@@ -19,9 +19,9 @@ describe('Plugin', () => {
           tracer = require('../../dd-trace')
         })
 
+        afterEach(() => agent.close())
+
         afterEach((done) => {
-          agent.close()
-          agent.wipe()
           context.connection.once('connection_close', () => done())
           context.connection.close()
         })
@@ -167,9 +167,9 @@ describe('Plugin', () => {
           tracer = require('../../dd-trace')
         })
 
+        afterEach(() => agent.close())
+
         afterEach((done) => {
-          agent.close()
-          agent.wipe()
           if (connection.socket_ready) {
             connection.once('connection_close', () => done())
             connection.close()

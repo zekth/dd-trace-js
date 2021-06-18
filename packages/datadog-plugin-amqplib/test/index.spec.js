@@ -16,8 +16,8 @@ describe('Plugin', () => {
         tracer = require('../../dd-trace')
       })
 
-      afterEach(() => {
-        connection.close()
+      afterEach(done => {
+        connection.close(done)
       })
 
       describe('without configuration', () => {
