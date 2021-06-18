@@ -16,10 +16,6 @@ describe('Plugin', () => {
         tracer = require('../../dd-trace')
       })
 
-      afterEach(done => {
-        connection.close(done)
-      })
-
       describe('without configuration', () => {
         before(() => {
           return agent.load('amqplib')
@@ -27,6 +23,10 @@ describe('Plugin', () => {
 
         after(() => {
           return agent.close()
+        })
+
+        afterEach(done => {
+          connection.close(done)
         })
 
         describe('when using a callback', () => {
@@ -236,25 +236,29 @@ describe('Plugin', () => {
             })
           })
         })
+      })
 
-        describe('when using a promise', () => {
-          beforeEach(() => {
-            return require(`../../../versions/amqplib@${version}`).get().connect()
-              .then(conn => (connection = conn))
-              .then(conn => conn.createChannel())
-              .then(ch => (channel = ch))
-          })
+      describe('when using a promise', () => {
+        beforeEach(() => {
+          return require(`../../../versions/amqplib@${version}`).get().connect()
+            .then(conn => (connection = conn))
+            .then(conn => conn.createChannel())
+            .then(ch => (channel = ch))
+        })
 
-          it('should run the callback in the parent context', done => {
-            if (process.env.DD_CONTEXT_PROPAGATION === 'false') return done()
+        afterEach(() => {
+          return connection.close()
+        })
 
-            channel.assertQueue('test', {})
-              .then(() => {
-                expect(tracer.scope().active()).to.be.null
-                done()
-              })
-              .catch(done)
-          })
+        it('should run the callback in the parent context', done => {
+          if (process.env.DD_CONTEXT_PROPAGATION === 'false') return done()
+
+          channel.assertQueue('test', {})
+            .then(() => {
+              expect(tracer.scope().active()).to.be.null
+              done()
+            })
+            .catch(done)
         })
       })
 
@@ -281,6 +285,10 @@ describe('Plugin', () => {
                 done(err)
               })
             })
+        })
+
+        afterEach(done => {
+          connection.close(done)
         })
 
         it('should be configured with the correct values', done => {
