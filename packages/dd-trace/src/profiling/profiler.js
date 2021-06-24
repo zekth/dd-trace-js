@@ -11,7 +11,8 @@ class Profiler extends EventEmitter {
     this._enabled = false
     this._logger = undefined
     this._config = undefined
-    this._timer = undefined
+    this._flushTimer = undefined
+    this._profileTimer = undefined
   }
 
   start (options) {
@@ -45,7 +46,7 @@ class Profiler extends EventEmitter {
       this.stop()
     }
 
-    this._capture(config.flushInterval)
+    this._capture()
 
     return this
   }
@@ -59,21 +60,28 @@ class Profiler extends EventEmitter {
       profiler.stop()
     }
 
-    clearTimeout(this._timer)
-    this._timer = undefined
+    clearTimeout(this._flushTimer)
+    clearTimeout(this._profileTimer)
+    this._flushTimer = undefined
+    this._profileTimer = undefined
 
     return this
   }
 
   _capture (timeout) {
     if (!this._enabled) return
+    const { flushInterval, profileDuration } = this._config
     const start = new Date()
 
-    if (!this._timer || timeout !== this._config.flushInterval) {
-      this._timer = setTimeout(() => this._collect(start), timeout)
-      this._timer.unref()
+    if (!this._timer) {
+      this._flushTimer = setTimeout(() => this._capture(), flushInterval)
+      this._flushTimer.unref()
+
+      this._profileTimer = setTimeout(() => this._collect(start), profileDuration)
+      this._profileTimer.unref()
     } else {
-      this._timer.refresh()
+      this._flushTimer.refresh()
+      this._profileTimer.refresh()
     }
   }
 
@@ -89,7 +97,6 @@ class Profiler extends EventEmitter {
         profiles[profiler.type] = profile
       }
 
-      this._capture(this._config.flushInterval)
       await this._submit(profiles, start, end)
     } catch (err) {
       this._logger.error(err)

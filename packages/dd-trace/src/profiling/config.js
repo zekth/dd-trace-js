@@ -30,7 +30,8 @@ class Config {
     const host = os.hostname()
     const version = coalesce(options.version, DD_VERSION)
     const flushInterval = coalesce(options.interval, DD_PROFILING_INTERVAL,
-      60 * 1000)
+      5 * 60 * 1000)
+    const profileDuration = coalesce(options.duration, 60 * 1000)
 
     this.enabled = String(enabled) !== 'false'
     this.service = service
@@ -45,6 +46,7 @@ class Config {
     )
     this.logger = ensureLogger(options.logger)
     this.flushInterval = flushInterval
+    this.profileDuration = profileDuration
 
     const hostname = coalesce(options.hostname, DD_AGENT_HOST, 'localhost')
     const port = coalesce(options.port, DD_TRACE_AGENT_PORT, 8126)
