@@ -1257,7 +1257,7 @@ jobs:
       - store_artifacts:
           path: ./prebuilds.tgz
       - store_artifacts:
-          path: ./prebuilds.tgz.sha1
+          path: ./prebuilds.tgz.sha256
 
 workflows:
   version: 2

@@ -143,7 +143,7 @@ function downloadArtifact (file) {
 function validatePrebuilds () {
   const file = path.join(os.tmpdir(), 'prebuilds.tgz')
   const content = fs.readFileSync(file)
-  const sum = fs.readFileSync(path.join(`${file}.sha1`), 'ascii')
+  const sum = fs.readFileSync(path.join(`${file}.sha256`), 'ascii')
 
   if (sum !== checksum(content, { algorithm: 'sha256' })) {
     throw new Error('Invalid checksum for "prebuilds.tgz".')

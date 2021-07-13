@@ -51,7 +51,9 @@ function prebuildify () {
       algorithm: 'sha256'
     })
 
-    fs.writeFileSync(`${output}.sha1`, sum)
+    console.log(sum)
+
+    fs.writeFileSync(`${output}.sha256`, sum)
     fs.copyFileSync('build/Release/metrics.node', output)
   })
 }
