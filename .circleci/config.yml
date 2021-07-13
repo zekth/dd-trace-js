@@ -273,6 +273,7 @@ prebuild-job: &prebuild-job
         - /v\d+\.\d+/
         - /v\d+\.x/
         - /.*native.*/
+        - /.*backport.*/
         - /^node-\d+/
 
 jobs:
