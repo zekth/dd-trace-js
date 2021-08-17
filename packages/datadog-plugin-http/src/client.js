@@ -290,7 +290,10 @@ function getFilter (tracer, config) {
   const blocklist = tracer._url ? [getAgentFilter(tracer._url)] : []
 
   config = Object.assign({}, config, {
-    blocklist: blocklist.concat(config.blocklist || [])
+    blocklist: blocklist.concat(
+      config.blocklist || [],
+      config.blacklist || [],
+    )
   })
 
   return urlFilter.getFilter(config)

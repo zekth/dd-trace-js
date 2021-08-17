@@ -915,6 +915,94 @@ describe('Plugin', () => {
         })
       })
 
+      describe('with blocklist configuration', () => {
+        let config
+
+        beforeEach(() => {
+          config = {
+            server: false,
+            client: {
+              blocklist: /_notokay/
+            }
+          }
+
+          return agent.load('http', config)
+            .then(() => {
+              http = require(protocol)
+              express = require('express')
+            })
+        })
+
+        it('should not include the blocklisted span', done => {
+          const app = express()
+
+          app.get('/notokay', (req, res) => {
+            res.status(200).send()
+          })
+
+          getPort().then(port => {
+            agent
+              .use(traces => {
+                expect(traces[0][0]).to.be.undefined
+              })
+              .then(done)
+              .catch(done)
+
+            appListener = server(app, port, () => {
+              const req = http.request(`${protocol}://localhost:${port}/notokay`, res => {
+                res.on('data', () => {})
+              })
+
+              req.end()
+            })
+          })
+        })
+      })
+
+      describe('with deprecated blacklist configuration', () => {
+        let config
+
+        beforeEach(() => {
+          config = {
+            server: false,
+            client: {
+              blacklist: /_notokay/
+            }
+          }
+
+          return agent.load('http', config)
+            .then(() => {
+              http = require(protocol)
+              express = require('express')
+            })
+        })
+
+        it('should not include the blacklisted span', done => {
+          const app = express()
+
+          app.get('/notokay', (req, res) => {
+            res.status(200).send()
+          })
+
+          getPort().then(port => {
+            agent
+              .use(traces => {
+                expect(traces[0][0]).to.be.undefined
+              })
+              .then(done)
+              .catch(done)
+
+            appListener = server(app, port, () => {
+              const req = http.request(`${protocol}://localhost:${port}/notokay`, res => {
+                res.on('data', () => {})
+              })
+
+              req.end()
+            })
+          })
+        })
+      })
+
       describe('with headers configuration', () => {
         let config
 
