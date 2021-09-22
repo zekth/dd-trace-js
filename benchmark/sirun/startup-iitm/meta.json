@@ -1,0 +1,15 @@
+{
+  "name": "startup-esm",
+  "run": "node index.mjs",
+  "cachegrind": true,
+  "iterations": 100,
+  "variants": {
+    "no-loader": {},
+    "loader": {
+      "baseline": "no-loader",
+      "env": {
+        "NODE_OPTIONS": "--loader ../../../loader-hook.mjs"
+      }
+    }
+  }
+}
