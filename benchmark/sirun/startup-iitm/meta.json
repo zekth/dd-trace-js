@@ -2,7 +2,7 @@
   "name": "startup-esm",
   "run": "node index.mjs",
   "cachegrind": true,
-  "iterations": 100,
+  "iterations": 500,
   "variants": {
     "no-loader": {},
     "loader": {

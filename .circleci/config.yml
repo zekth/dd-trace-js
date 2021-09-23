@@ -204,6 +204,8 @@ jobs:
 
   node-bench-sirun-startup: *node-bench-sirun-base
 
+  node-bench-sirun-startup-iitm: *node-bench-sirun-base
+
   node-bench-sirun-spans: *node-bench-sirun-base
 
   node-bench-sirun-async_hooks: *node-bench-sirun-base
@@ -830,6 +832,7 @@ workflows:
           matrix:
             parameters:
               node-version: ["12", "14", "16"]
+      - node-bench-sirun-startup-iitm: *matrix-exact-supported-node-versions
       - node-bench-sirun-spans: *matrix-exact-supported-node-versions
       - node-bench-sirun-async_hooks: *matrix-exact-supported-node-versions
       - node-bench-sirun-log: *matrix-exact-supported-node-versions
@@ -844,6 +847,7 @@ workflows:
       - node-bench-sirun-all:
           requires:
             - node-bench-sirun-startup
+            - node-bench-sirun-startup-iitm
             - node-bench-sirun-spans
             - node-bench-sirun-async_hooks
             - node-bench-sirun-log
