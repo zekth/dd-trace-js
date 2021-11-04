@@ -162,7 +162,7 @@ function createRegistry (type) {
 
   return new global.FinalizationRegistry(name => {
     metrics.decrement(`runtime.node.spans.${type}`)
-    metrics.decrement(`runtime.node.spans.${type}.by.name`, [`span_name:${name}`])
+    metrics.decrement(`runtime.node.spans.${type}.by.name`, `span_name:${name}`)
   })
 }
 
