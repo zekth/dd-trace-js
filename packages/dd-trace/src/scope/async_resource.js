@@ -1,7 +1,9 @@
 'use strict'
 
 const { createHook, executionAsyncResource } = require('async_hooks')
+const semver = require('semver')
 const Base = require('./base')
+const metrics = require('../metrics')
 
 let singleton = null
 
@@ -14,6 +16,7 @@ class Scope extends Base {
     singleton = this
 
     this._ddResourceStore = Symbol('ddResourceStore')
+    this._registry = this._createRegistry()
     this._config = config
     this._stack = []
     this._hook = createHook({
@@ -76,6 +79,22 @@ class Scope extends Base {
     if (span) {
       resource[this._ddResourceStore] = span
     }
+
+    if (this._registry) {
+      metrics.increment('runtime.node.async.resources')
+      metrics.increment('runtime.node.async.resources.by.type', `resource_type:${type}`)
+
+      this._registry.register(resource, type)
+    }
+  }
+
+  _createRegistry () {
+    if (!this._debug || !semver.satisfies(process.version, '>=14.6')) return
+
+    return new global.FinalizationRegistry(type => {
+      metrics.decrement('runtime.node.async.resources')
+      metrics.decrement('runtime.node.async.resources.by.type', `resource_type:${type}`)
+    })
   }
 }
 
