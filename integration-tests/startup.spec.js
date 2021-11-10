@@ -17,7 +17,7 @@ describe('startup', () => {
   let startupTestFile
 
   before(async () => {
-    sandbox = await createSandbox()
+    sandbox = await createSandbox(['winston'])
     cwd = sandbox.folder
     startupTestFile = path.join(cwd, 'startup/index.js')
   })
@@ -132,6 +132,41 @@ describe('startup', () => {
       proc = await spawnProc(startupTestFile)
       return curlAndAssertMessage(agent, proc, ({ headers, payload }) => {
         assert.propertyVal(headers, 'host', '127.0.0.1:8126')
+        assert.isArray(payload)
+        assert.strictEqual(payload.length, 1)
+        assert.isArray(payload[0])
+        assert.strictEqual(payload[0].length, 1)
+        assert.propertyVal(payload[0][0], 'name', 'http.request')
+      })
+    })
+  })
+
+  context('with all features enabled', () => {
+    beforeEach(async () => {
+      agent = await new FakeAgent().start()
+    })
+
+    afterEach(async () => {
+      proc.kill()
+      await agent.stop()
+    })
+
+    it('works without errors', async () => {
+      proc = await spawnProc(startupTestFile, {
+        cwd,
+        env: {
+          DD_TRACE_AGENT_PORT: agent.port,
+          DD_TRACE_ENABLED: 'true',
+          DD_PROFILING_ENABLED: 'true',
+          DD_LOGS_INJECTION: 'true',
+          DD_TRACE_DEBUG: 'true',
+          DD_TRACE_STARTUP_LOGS: 'true',
+          DD_RUNTIME_METRICS_ENABLED: 'true',
+          DD_APPSEC_ENABLED: 'true'
+        }
+      })
+      return curlAndAssertMessage(agent, proc, ({ headers, payload }) => {
+        assert.propertyVal(headers, 'host', `127.0.0.1:${agent.port}`)
         assert.isArray(payload)
         assert.strictEqual(payload.length, 1)
         assert.isArray(payload[0])
