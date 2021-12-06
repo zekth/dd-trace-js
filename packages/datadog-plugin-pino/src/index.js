@@ -5,7 +5,7 @@ const { LOG } = require('../../../ext/formats')
 function createWrapPino (tracer, config, symbol, wrapper) {
   return function wrapPino (pino) {
     return function pinoWithTrace () {
-      const instance = pino.apply(this, arguments)
+      const instance = (pino.default || pino).apply(this, arguments)
 
       Object.defineProperty(instance, symbol, {
         configurable: true,
@@ -62,7 +62,7 @@ function createWrapPrettifyObject (tracer, config) {
 
       tracer.inject(span, LOG, input.input)
 
-      return prettifyObject.apply(this, arguments)
+      return (prettifyObject.default || prettifyObject).apply(this, arguments)
     }
   }
 }
@@ -70,7 +70,7 @@ function createWrapPrettifyObject (tracer, config) {
 function createWrapPrettyFactory (tracer, config) {
   return function wrapPrettyFactory (prettyFactory) {
     return function prettyFactoryWithTrace () {
-      const pretty = prettyFactory.apply(this, arguments)
+      const pretty = (prettyFactory.default || prettyFactory).apply(this, arguments)
 
       return function prettyWithTrace (obj) {
         const span = tracer.scope().active()

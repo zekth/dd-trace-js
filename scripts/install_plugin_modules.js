@@ -157,6 +157,7 @@ const requirePackageJson = require('${requirePackageJsonPath}')
 
 module.exports = {
   get (id) { return require(id || '${name}') },
+  getESM (id) { return import(id || '${name}') },
   version () { return requirePackageJson('${name}', module).version }
 }
 `

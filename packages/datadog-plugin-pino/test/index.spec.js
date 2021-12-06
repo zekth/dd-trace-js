@@ -11,8 +11,8 @@ describe('Plugin', () => {
   let stream
   let span
 
-  function setup (version, options) {
-    const pino = require(`../../../versions/pino@${version}`).get()
+  async function setup (version, options, esm) {
+    const pino = await require(`../../../versions/pino@${version}`)[esm ? 'getESM' : 'get']()
 
     span = tracer.startSpan('test')
 
@@ -21,11 +21,12 @@ describe('Plugin', () => {
 
     sinon.spy(stream, 'write')
 
-    logger = pino(options, stream)
+    logger = (pino.default || pino)(options, stream)
   }
 
   describe('pino', () => {
-    withVersions(plugin, 'pino', version => {
+    withVersions(plugin, 'pino', (version, _, moduleType) => {
+      if (moduleType === 'ESM') return
       beforeEach(() => {
         tracer = require('../../dd-trace')
         return agent.load('pino')
@@ -36,8 +37,8 @@ describe('Plugin', () => {
       })
 
       describe('without configuration', () => {
-        beforeEach(() => {
-          setup(version)
+        beforeEach(async () => {
+          await setup(version, moduleType === 'ESM')
         })
 
         it('should not alter the default behavior', () => {
@@ -54,8 +55,8 @@ describe('Plugin', () => {
         })
 
         if (semver.intersects(version, '>=5')) {
-          it('should not alter the default behavior with pretty print', () => {
-            setup(version, { prettyPrint: true })
+          it('should not alter the default behavior with pretty print', async () => {
+            await setup(version, { prettyPrint: true }, moduleType === 'ESM')
 
             tracer.scope().activate(span, () => {
               logger.info('message')
@@ -73,9 +74,9 @@ describe('Plugin', () => {
       })
 
       describe('with configuration', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
           tracer._tracer._logInjection = true
-          setup(version)
+          await setup(version, undefined, moduleType === 'ESM')
         })
 
         it('should add the trace identifiers to logger instances', () => {
@@ -128,12 +129,12 @@ describe('Plugin', () => {
         })
 
         if (semver.intersects(version, '>=5.14.0')) {
-          it('should not alter pino mixin behavior', () => {
+          it('should not alter pino mixin behavior', async () => {
             const opts = { mixin: () => ({ addedMixin: true }) }
 
             sinon.spy(opts, 'mixin')
 
-            setup(version, opts)
+            await setup(version, opts, moduleType === 'ESM')
 
             tracer.scope().activate(span, () => {
               logger.info('message')
@@ -158,8 +159,8 @@ describe('Plugin', () => {
         // TODO: test with a version matrix against pino. externals.json doesn't allow that
         //       and we cannot control the version of pino-pretty internally required by pino
         if (semver.intersects(version, '>=5')) {
-          it('should add the trace identifiers to logger instances with pretty print', () => {
-            setup(version, { prettyPrint: true })
+          it('should add the trace identifiers to logger instances with pretty print', async () => {
+            await setup(version, { prettyPrint: true }, moduleType === 'ESM')
 
             tracer.scope().activate(span, () => {
               logger.info('message')

@@ -16,7 +16,6 @@ describe('iitm.js', () => {
       })
 
       it('should export iitm', () => {
-        expect(iitmjs).to.equal(iitm)
         expect(iitmjs()).to.be.true
       })
     })

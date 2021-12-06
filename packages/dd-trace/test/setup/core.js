@@ -70,25 +70,27 @@ function withVersions (plugin, modules, range, cb) {
       .forEach(v => {
         const versionPath = `${__dirname}/../../../../versions/${moduleName}@${v.test}/node_modules`
 
-        describe(`with ${moduleName} ${v.range} (${v.version})`, () => {
-          let nodePath
+        for (const loaderType of ['CJS', 'ESM']) {
+          describe(`with ${moduleName} ${v.range} (${v.version}) [${loaderType}]`, () => {
+            let nodePath
 
-          before(() => {
-            nodePath = process.env.NODE_PATH
-            process.env.NODE_PATH = [process.env.NODE_PATH, versionPath]
-              .filter(x => x && x !== 'undefined')
-              .join(os.platform() === 'win32' ? ';' : ':')
+            before(() => {
+              nodePath = process.env.NODE_PATH
+              process.env.NODE_PATH = [process.env.NODE_PATH, versionPath]
+                .filter(x => x && x !== 'undefined')
+                .join(os.platform() === 'win32' ? ';' : ':')
 
-            require('module').Module._initPaths()
+              require('module').Module._initPaths()
+            })
+
+            cb(v.test, moduleName, loaderType)
+
+            after(() => {
+              process.env.NODE_PATH = nodePath
+              require('module').Module._initPaths()
+            })
           })
-
-          cb(v.test, moduleName)
-
-          after(() => {
-            process.env.NODE_PATH = nodePath
-            require('module').Module._initPaths()
-          })
-        })
+        }
       })
   })
 }
