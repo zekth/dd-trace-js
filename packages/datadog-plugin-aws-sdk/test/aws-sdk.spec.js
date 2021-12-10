@@ -78,6 +78,25 @@ describe('Plugin', () => {
           })
         })
 
+        if (semver.intersects(version, '3.x.x')) {
+          it('should instrument methods that go through promisifyMethod', (done) => {
+            agent.use(traces => {
+              console.error(traces)
+              
+              const span = sort(traces[0])[0]
+
+              expect(span).to.include({
+                name: 'aws.request',
+                resource: 'getObject',
+                service: 'test-aws-s3'
+              })
+            }).then(done, done)
+
+            var params = {Bucket: 'bucket', Key: 'key'};
+            const promise = s3.getSignedUrlPromise('getObject', params);
+            promise.catch(done);
+          })
+        }
         if (semver.intersects(version, '>=2.3.0')) {
           it('should instrument service methods using promise()', (done) => {
             agent.use(traces => {

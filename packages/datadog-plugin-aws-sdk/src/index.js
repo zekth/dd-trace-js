@@ -67,6 +67,18 @@ function createWrapSetPromisesDependency (tracer, config, instrumenter, AWS) {
   }
 }
 
+function createWrapPromisifyMethod (tracer, config, instrumenter, AWS) {
+  //process.exit(7)
+  return function wrapSetPromisesDependency (promisifyMethod) {
+    // process.exit(8)
+    return function promisifyMethodWithTrace (method) {
+      const result = promisifyMethod.apply(this, arguments)
+      // process.exit(1)
+      return instrumenter.wrapExport(result, createWrapRequest(tracer, config)(result))
+    }
+  }
+}
+
 function normalizeConfig (config) {
   const hooks = getHooks(config)
 
@@ -93,6 +105,20 @@ function getServiceName (serviceIdentifier, tracer, config) {
 // <2.1.35 has breaking changes for instrumentation
 // https://github.com/aws/aws-sdk-js/pull/629
 module.exports = [
+  {
+    name: 'aws-sdk',
+    versions: ['>=3.0.0'],
+    patch (AWS, tracer, config) {
+      this.wrap(AWS.Request.prototype, 'promise', createWrapRequest(tracer, config))
+      this.wrap(AWS.util, 'promisifyMethod', createWrapPromisifyMethod(tracer, config, this, AWS))
+      this.wrap(AWS.config, 'setPromisesDependency', createWrapSetPromisesDependency(tracer, config, this, AWS))
+    },
+    unpatch (AWS) {
+      this.unwrap(AWS.Request.prototype, 'promise')
+      this.unwrap(AWS.util, 'promisifyMethod')
+      this.unwrap(AWS.config, 'setPromisesDependency')
+    }
+  },
   {
     name: 'aws-sdk',
     versions: ['>=2.3.0'],
