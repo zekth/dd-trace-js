@@ -10,6 +10,11 @@ const metrics = require('../../src/metrics')
 const agent = require('../plugins/agent')
 const externals = require('../plugins/externals.json')
 const { storage } = require('../../../datadog-core')
+const dns = require('dns');
+
+if (dns.setDefaultResultOrder) {
+  dns.setDefaultResultOrder('ipv4first');
+}
 
 chai.use(sinonChai)
 chai.use(require('../asserts/profile'))

@@ -11,15 +11,23 @@ describe('Plugin', () => {
   describe('aws-sdk', function () {
     setup()
 
-    withVersions(plugin, 'aws-sdk', version => {
+    withVersions(plugin, 'aws-sdk', (version, ...args) => {
       let AWS
       let s3
       let sqs
       let tracer
+      let exactVersion;
+
+      before(() => {
+        // AWS = require(`../../../versions/aws-sdk@${version}`).get()
+        exactVersion = require(`../../../versions/aws-sdk@${version}`).version()
+        console.log('SET EXACTVERSION', exactVersion, version)
+      })
 
       describe('without configuration', () => {
         before(() => {
           AWS = require(`../../../versions/aws-sdk@${version}`).get()
+          // exactVersion = require(`../../../versions/aws-sdk@${version}`).version()
 
           const endpoint = new AWS.Endpoint('http://localhost:4572')
 
@@ -78,8 +86,9 @@ describe('Plugin', () => {
           })
         })
 
-        if (semver.intersects(version, '3.x.x')) {
-          it('should instrument methods that go through promisifyMethod', (done) => {
+        if (semver.satisfies(exactVersion, '>=3.0.0')) {
+          console.error('version', exactVersion, args)
+          it.only('should instrument methods that go through promisifyMethod', (done) => {
             agent.use(traces => {
               console.error(traces)
               
@@ -148,6 +157,7 @@ describe('Plugin', () => {
       describe('with configuration', () => {
         before(() => {
           AWS = require(`../../../versions/aws-sdk@${version}`).get()
+          // exactVersion = require(`../../../versions/aws-sdk@${version}`).version()
 
           const endpoint = new AWS.Endpoint('http://localhost:4572')
 
@@ -191,6 +201,7 @@ describe('Plugin', () => {
       describe('with service configuration', () => {
         before(() => {
           AWS = require(`../../../versions/aws-sdk@${version}`).get()
+          // exactVersion = require(`../../../versions/aws-sdk@${version}`).version()
 
           s3 = new AWS.S3({ endpoint: new AWS.Endpoint('http://localhost:4572'), s3ForcePathStyle: true })
           sqs = new AWS.SQS({ endpoint: new AWS.Endpoint('http://localhost:4576') })
