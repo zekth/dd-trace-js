@@ -16,6 +16,7 @@ addHook({ name: 'memcached', versions: ['>=2.2'] }, Memcached => {
   const endCh = channel('apm:memcached:command:end')
   const errorCh = channel('apm:memcached:command:error')
 
+  // roughly the same kind of call as this.wrap
   shimmer.wrap(Memcached.prototype, 'command', command => function (queryCompiler, server) {
     if (!startCh.hasSubscribers) {
       return command.apply(this, arguments)

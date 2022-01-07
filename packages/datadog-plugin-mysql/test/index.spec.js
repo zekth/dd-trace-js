@@ -10,6 +10,9 @@ describe('Plugin', () => {
   describe('mysql', () => {
     withVersions(plugin, 'mysql', version => {
       beforeEach(() => {
+        console.log('heyyyyasdasd')
+        console.log(version)
+        console.log(plugin)
         tracer = require('../../dd-trace')
       })
 
