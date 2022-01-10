@@ -77,6 +77,9 @@ function wrap (prefix, fn, expectedArgs, rrtype) {
       cb.apply(this, arguments)
     }
 
+    console.log('grhhh')
+    console.log(cb)
+    console.log(arguments[arguments.length - 1].toString())
     try {
       return fn.apply(this, arguments)
       // TODO deal with promise versions when we support `dns/promises`

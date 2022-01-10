@@ -2,33 +2,31 @@
 
 const agent = require('../../dd-trace/test/plugins/agent')
 const plugin = require('../src')
+const proxyquire = require('proxyquire').noPreserveCache()
 
 describe('Plugin', () => {
   let mysql
   let tracer
 
   describe('mysql', () => {
-    withVersions(plugin, 'mysql', version => {
+    withVersions('mysql', 'mysql', version => {
       beforeEach(() => {
-        console.log('heyyyyasdasd')
-        console.log(version)
-        console.log(plugin)
         tracer = require('../../dd-trace')
       })
 
       describe('without configuration', () => {
         let connection
 
-        before(() => {
+        beforeEach(() => {
           return agent.load('mysql')
         })
 
-        after(() => {
+        afterEach(() => {
           return agent.close()
         })
 
         beforeEach(() => {
-          mysql = require(`../../../versions/mysql@${version}`).get()
+          mysql = proxyquire(`../../../versions/mysql@${version}`, {}).get()
 
           connection = mysql.createConnection({
             host: 'localhost',
@@ -43,15 +41,19 @@ describe('Plugin', () => {
           connection.end(done)
         })
 
-        it('should propagate context to callbacks, with correct callback args', done => {
+        it.only('should propagate context to callbacks, with correct callback args', done => {
           const span = tracer.startSpan('test')
 
           tracer.scope().activate(span, () => {
             const span = tracer.scope().active()
-
+            
             connection.query('SELECT 1 + 1 AS solution', (err, results, fields) => {
               expect(results).to.not.be.null
               expect(fields).to.not.be.null
+              console.log('test blah glah cheallassa')
+              // console.log(span)
+              // console.log(mysql)
+              // console.log(span)
               expect(tracer.scope().active()).to.equal(span)
               done()
             })

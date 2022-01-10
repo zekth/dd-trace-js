@@ -51,6 +51,8 @@ describe('Plugin', () => {
             memcached.get('test', err => {
               if (err) return done(err)
               try {
+
+                // console.log(span)
                 expect(tracer.scope().active()).to.equal(span)
                 done()
               } catch (e) {

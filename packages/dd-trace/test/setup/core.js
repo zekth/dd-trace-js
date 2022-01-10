@@ -30,7 +30,6 @@ afterEach(() => {
 })
 
 function loadInst (plugin) {
-  console.log('sleek')
   const instrumentations = []
   const instrument = {
     addHook (instrumentation) {
@@ -38,8 +37,6 @@ function loadInst (plugin) {
     }
   }
   const instPath = path.join(__dirname, `../../../datadog-instrumentations/src/${plugin}.js`)
-  console.log('yay')
-  console.log(instPath)
   proxyquire.noPreserveCache()(instPath, {
     './helpers/instrument': instrument
   })
@@ -47,15 +44,10 @@ function loadInst (plugin) {
 }
 
 function withVersions (plugin, modules, range, cb) {
-  console.log('check')
   const instrumentations = typeof plugin === 'string' ? loadInst(plugin) : [].concat(plugin)
   const names = [].concat(plugin).map(instrumentation => instrumentation.name)
-  console.log(names)
-  console.log('hello')
 
   modules = [].concat(modules)
-
-  console.log(modules)
 
   names.forEach(name => {
     if (externals[name]) {
@@ -72,21 +64,9 @@ function withVersions (plugin, modules, range, cb) {
 
   modules.forEach(moduleName => {
     const testVersions = new Map()
-    console.log('heyyys')
-    console.log('heyyyasdasdass')
-    console.log(instrumentations[0].versions)
-    console.log(instrumentations[0].file)
-    console.log(instrumentations)
-    console.log(moduleName)
-    console.log(instrumentations[0].name)
-    console.log(instrumentations[0])
-    console.log(JSON.stringify(instrumentations[0], null, 4));
-    console.log(instrumentations[0].versions)
     instrumentations
       .filter(instrumentation => instrumentation.name === moduleName)
       .forEach(instrumentation => {
-        console.log('dasdasdasdas')
-        console.log(instrumentation)
         instrumentation.versions
           .forEach(version => {
             const min = semver.coerce(version).version

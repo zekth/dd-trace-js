@@ -21,7 +21,6 @@ exports.channel = function channel (name) {
 
 exports.addHook = function addHook ({ name, versions, file }, hook) {
   file = filename(name, file)
-  console.log('ok ok ok ok ok')
   const loaderHook = (moduleExports, moduleName, moduleBaseDir) => {
     moduleName = moduleName.replace(pathSepExpr, '/')
     const moduleVersion = getVersion(moduleBaseDir)

@@ -18,18 +18,19 @@ addHook({ name: 'memcached', versions: ['>=2.2'] }, Memcached => {
 
   // roughly the same kind of call as this.wrap
   shimmer.wrap(Memcached.prototype, 'command', command => function (queryCompiler, server) {
+    
     if (!startCh.hasSubscribers) {
       return command.apply(this, arguments)
     }
-
     const asyncResource = new AsyncResource('bound-anonymous-fn')
 
     const client = this
 
     const wrappedQueryCompiler = function () {
       const query = queryCompiler.apply(this, arguments)
+      // console.log(query)
       const callback = bindAsyncResource.call(asyncResource, query.callback)
-
+      console.log(callback.asyncResource)
       query.callback = bind(function (err) {
         if (err) {
           errorCh.publish(err)
@@ -39,7 +40,7 @@ addHook({ name: 'memcached', versions: ['>=2.2'] }, Memcached => {
         return callback.apply(this, arguments)
       })
       startWithArgsCh.publish({ client, server, query })
-
+      
       return query
     }
 
@@ -49,8 +50,10 @@ addHook({ name: 'memcached', versions: ['>=2.2'] }, Memcached => {
 
     const result = command.apply(this, arguments)
     endCh.publish(undefined)
+    console.log('blahh')
+    console.log(result)
     return result
   })
-
+  console.log(Memcached)
   return Memcached
 })

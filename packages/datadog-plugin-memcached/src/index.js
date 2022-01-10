@@ -55,6 +55,8 @@ class MemcachedPlugin extends Plugin {
     })
 
     this.addSub('apm:memcached:command:async-end', () => {
+      console.log('adasdasdasdas k o jheez')
+      console.log(storage)
       const span = storage.getStore().span
       span.finish()
     })
