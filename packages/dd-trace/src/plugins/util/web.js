@@ -466,4 +466,11 @@ function getMiddlewareSetting (config) {
   return true
 }
 
-module.exports = web
+module.exports = {
+  web: web,
+  wrapWriteHead: wrapWriteHead,
+  wrapEnd: wrapEnd,
+  wrapEvents: wrapEvents,
+  finishMiddleware: finishMiddleware,
+  finish: finish
+}

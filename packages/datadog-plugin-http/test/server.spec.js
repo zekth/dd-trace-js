@@ -15,6 +15,7 @@ describe('Plugin', () => {
 
   describe('http/server', () => {
     beforeEach(() => {
+      debugger;
       tracer = require('../../dd-trace')
       listener = (req, res) => {
         app && app(req, res)
@@ -24,6 +25,7 @@ describe('Plugin', () => {
     })
 
     beforeEach(() => {
+      debugger;
       return getPort().then(newPort => {
         port = newPort
       })
@@ -36,6 +38,7 @@ describe('Plugin', () => {
 
     describe('without configuration', () => {
       beforeEach(() => {
+        debugger;
         return agent.load('http')
           .then(() => {
             http = require('http')
@@ -43,14 +46,17 @@ describe('Plugin', () => {
       })
 
       beforeEach(done => {
+        debugger;
         const server = new http.Server(listener)
         appListener = server
           .listen(port, 'localhost', () => done())
       })
 
-      it('should do automatic instrumentation', done => {
+      it.only('should do automatic instrumentation', done => {
+        debugger;
         agent
           .use(traces => {
+            debugger;
             expect(traces[0][0]).to.have.property('name', 'http.request')
             expect(traces[0][0]).to.have.property('service', 'test')
             expect(traces[0][0]).to.have.property('type', 'web')
