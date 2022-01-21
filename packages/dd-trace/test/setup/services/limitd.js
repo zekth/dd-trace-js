@@ -8,11 +8,12 @@ function waitForLimitd () {
     const operation = new RetryOperation('limitd', {
       retries: 180
     })
-    const limitd = new LimitdClient('limitd://localhost:9231')
 
     setImmediate(() => {
       operation.attempt(currentAttempt => {
+        const limitd = new LimitdClient('limitd://localhost:9231')
         limitd.ping(err => {
+          limitd.disconnect()
           if (operation.retry(err)) return
           if (err) return reject(err)
 
