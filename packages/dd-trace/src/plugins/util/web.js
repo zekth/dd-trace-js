@@ -472,5 +472,6 @@ module.exports = {
   wrapEnd: wrapEnd,
   wrapEvents: wrapEvents,
   finishMiddleware: finishMiddleware,
-  finish: finish
+  finish: finish,
+  extractURL: extractURL
 }

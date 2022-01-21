@@ -13,75 +13,32 @@ const web = require('../../dd-trace/src/plugins/util/web')
 
 addHook({ name: 'http' }, http => {
   const startCh = channel('apm:http:request:start')
-  const asyncEndCh = channel('apm:http:request:async-end')
+  const asyncEndCh1 = channel('apm:http:request:async-end1')
+  const asyncEndCh2 = channel('apm:http:request:async-end2')
   const endCh = channel('apm:http:request:end')
   const errorCh = channel('apm:http:request:error')
 
   // if (this.config.server === false) return
 
   shimmer.wrap(http.Server.prototype, 'emit', (emit) => function (eventName, req, res) {
+    const asyncResource = new AsyncResource('bound-anonymous-fn')
     debugger;
     const config = web.web.normalizeConfig({})
 
-    const asyncResource = new AsyncResource('bound-anonymous-fn')
+    
     if (!startCh.hasSubscribers) {
       return emit.apply(this, arguments)
     }
 
     if (eventName === 'request') {
-      // return web.instrument(tracer, config, req, res, 'http.request', () => {
-      //   return emit.apply(this, arguments)
-      // })
-      startCh.publish([req, res, config])
+      debugger;
 
-      if (!req._datadog.instrumented) {
-        debugger;
-        const newRes = req._datadog.res
-        newRes.writeHead = web.wrapWriteHead(req)
-
-        newRes._datadog_end = function () {
-          for (const beforeEnd of req._datadog.beforeEnd) {
-            beforeEnd()
-          }
-      
-          // web.finishMiddleware(req, newRes)
-          asyncEndCh.publish(undefined)
-      
-          const returnValue = res.end.apply(newRes, arguments)
-          
-          asyncEndCh.publish([req])
-          // web.finish(req, newRes)
-      
-          return returnValue
-        }
-      
-        Object.defineProperty(newRes, 'end', {
-          configurable: true,
-          get () {
-            return this._datadog_end
-          },
-          set (value) {
-            this._datadog_end = bind(value, req._datadog.span)
-          }
-        })
-
-        // web.wrapEnd(req)
-        // web.wrapEvents(req)
-        // bind(newRes, req._datadog.span)
-        
-        // const cb = bindAsyncResource.call(asyncResource, newRes)
-        // newRes = cb
-        req._datadog.instrumented = true
-      }
-      // emit = bind(emit)
-      // return emit.apply(this, arguments)
-      const cb = () => {
+      return wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2, endCh, errorCh, asyncResource, req, res, config, () => {
         return emit.apply(this, arguments)
-      }
-      // c
-      return cb && bind(cb)
+      })
     }
     debugger;
+
     return emit.apply(this, arguments)
   })
 
@@ -93,55 +50,80 @@ addHook({ name: 'http' }, http => {
   return http
 })  
 
-addHook({ name: 'https' }, https => {
-  const startCh = channel('apm:http:request:start')
-  const asyncEndCh = channel('apm:http:request:async-end')
-  const endCh = channel('apm:http:request:end')
-  const errorCh = channel('apm:http:request:error')
+function wrapCallback (ar, callback) {
+  if (typeof callback !== 'function') return callback
 
-  if (this.config.server === false) return
+  return function () {
+    return ar.runInAsyncScope(() => {
+      return callback.apply(this, arguments)
+    })
+  }
+}
 
-  shimmer.wrap(http.Server.prototype, 'emit', emit => function (eventName, req, res) {
+function wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2 , endCh, errorCh, ar, req, res, config, callback) {
+  debugger;
+  startCh.publish([req, res, config])
+  debugger;
+
+  if (!req._datadog.instrumented) {
     debugger;
-    const config = web.web.normalizeConfig(this.config)
+    wrapEnd(req, asyncEndCh1, asyncEndCh2, endCh, errorCh)
+    // wrapEvents(req, endCh)
+    // const cb = bind(function () {
+    //   asyncEndCh.publish(undefined)
+    //   endCh.publish(undefined)
+    // })
+    
 
-    const asyncResource = new AsyncResource('bound-anonymous-fn')
-    if (!startCh.hasSubscribers) {
-      return emit.apply(this, arguments)
-    }
+    req._datadog.instrumented = true
+    endCh.publish(undefined)
+  }
 
-    if (eventName === 'request') {
-      // return web.instrument(tracer, config, req, res, 'http.request', () => {
-      //   return emit.apply(this, arguments)
-      // })
-      startCh.publish([req, res, config])
-    }
-
-    if (!req._datadog.instrumented) {
-      res.writeHead = web.wrapWriteHead(req)
-      // yet to do not needed for http
-      // req._datadog.res._datadog_end = bind(function (error, result) {
-      //   for (const beforeEnd of req._datadog.beforeEnd) {
-      //     beforeEnd()
-      //   }
-
-      //   if (error) {
-      //     errorCh.publish(error)
-      //   }
-      //   asyncEndCh.publish([req])
-
-      //   const returnValue = resend.apply(res, arguments)
-
-      //   return cb.apply(this, arguments)
-      // })
-      // wrapEnd(req)
-      // wrapEvents(req)
-
-      req._datadog.instrumented = true
-    }
-
-    return emit.apply(this, arguments)
+  return callback && ar.runInAsyncScope(() => {
+    return callback.apply(this, arguments)
   })
-  
-  return https
-})  
+}
+
+function beforeEnd (req, callback) {
+  req._datadog.beforeEnd.push(callback)
+}
+
+function wrapEnd (req, asyncEndCh1, asyncEndCh2, endCh, errorCh) {
+  // const scope = req._datadog.tracer.scope()
+  const res = req._datadog.res
+  const end = res.end
+
+  res.writeHead = web.wrapWriteHead(req)
+
+  res._datadog_end = function () {
+    debugger;
+    for (const beforeEnd of req._datadog.beforeEnd) {
+      beforeEnd()
+    }
+
+    asyncEndCh1.publish([req])
+    
+    const returnValue = end.apply(res, arguments)
+
+    // finish(req, res)
+    asyncEndCh2.publish([req,res])
+    
+    return returnValue
+  }
+  debugger;
+  Object.defineProperty(res, 'end', {
+    configurable: true,
+    get () {
+      return this._datadog_end
+    },
+    set (value) {
+      this._datadog_end = bind(value)
+    }
+  })
+}
+
+function wrapEvents (req, endCh) {
+  debugger;
+  const res = bind(req._datadog.res)
+  endCh.publish(undefined)
+}

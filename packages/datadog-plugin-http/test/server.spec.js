@@ -3,7 +3,7 @@
 const getPort = require('get-port')
 const agent = require('../../dd-trace/test/plugins/agent')
 const axios = require('axios')
-const { incomingHttpRequestStart } = require('../../dd-trace/src/appsec/gateway/channels')
+const proxyquire = require('proxyquire').noPreserveCache()
 
 describe('Plugin', () => {
   let http
@@ -15,7 +15,6 @@ describe('Plugin', () => {
 
   describe('http/server', () => {
     beforeEach(() => {
-      debugger;
       tracer = require('../../dd-trace')
       listener = (req, res) => {
         app && app(req, res)
@@ -25,7 +24,6 @@ describe('Plugin', () => {
     })
 
     beforeEach(() => {
-      debugger;
       return getPort().then(newPort => {
         port = newPort
       })
@@ -33,26 +31,25 @@ describe('Plugin', () => {
 
     afterEach(() => {
       appListener && appListener.close()
-      return agent.close()
+      return agent.close({ ritmReset: false })
     })
 
     describe('without configuration', () => {
       beforeEach(() => {
-        debugger;
         return agent.load('http')
           .then(() => {
-            http = require('http')
+            // http = require('http')
+            http = proxyquire('http', {})
           })
       })
 
       beforeEach(done => {
-        debugger;
         const server = new http.Server(listener)
         appListener = server
           .listen(port, 'localhost', () => done())
       })
 
-      it.only('should do automatic instrumentation', done => {
+      it('should do automatic instrumentation', done => {
         debugger;
         agent
           .use(traces => {
@@ -72,14 +69,10 @@ describe('Plugin', () => {
         axios.get(`http://localhost:${port}/user`).catch(done)
       })
 
-      it('should run the request listener in the request scope', done => {
-        const spy = sinon.spy(() => {
-          expect(tracer.scope().active()).to.not.be.null
-        })
-
-        incomingHttpRequestStart.subscribe(spy)
-
+      it.only('should run the request listener in the request scope', done => {
+        debugger;
         app = (req, res) => {
+          debugger;
           expect(tracer.scope().active()).to.not.be.null
 
           expect(spy).to.have.been.calledOnceWithExactly({ req, res }, incomingHttpRequestStart.name)
