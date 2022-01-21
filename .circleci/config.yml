@@ -788,7 +788,7 @@ workflows:
       - node-kafkajs: *matrix-supported-node-versions
       - node-knex: *matrix-supported-node-versions
       - node-koa: *matrix-supported-node-versions
-      # - node-limitd-client
+      - node-limitd-client: *matrix-supported-node-versions
       - node-memcached: *matrix-supported-node-versions
       - node-microgateway-core: *matrix-supported-node-versions
       - node-mocha: *matrix-supported-node-versions
@@ -846,7 +846,7 @@ workflows:
             - node-kafkajs
             - node-knex
             - node-koa
-            # - node-limitd-client
+            - node-limitd-client
             - node-memcached
             - node-microgateway-core
             - node-mocha
