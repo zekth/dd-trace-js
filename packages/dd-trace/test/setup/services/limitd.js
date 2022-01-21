@@ -5,7 +5,9 @@ const LimitdClient = require('../../../../../versions/limitd-client').get()
 
 function waitForLimitd () {
   return new Promise((resolve, reject) => {
-    const operation = new RetryOperation('limitd')
+    const operation = new RetryOperation('limitd', {
+      retries: 180
+    })
     const limitd = new LimitdClient('limitd://localhost:9231')
 
     setImmediate(() => {

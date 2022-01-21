@@ -12,8 +12,8 @@ const options = {
 }
 
 class RetryOperation extends BaseRetryOperation {
-  constructor (service) {
-    const timeouts = retry.timeouts(options)
+  constructor (service, otherOptions) {
+    const timeouts = retry.timeouts(Object.assign({}, options, otherOptions))
 
     super(timeouts, { service })
   }
