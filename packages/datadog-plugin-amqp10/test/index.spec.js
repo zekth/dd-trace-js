@@ -1,7 +1,8 @@
 'use strict'
 
+require('../../datadog-instrumentations/src/amqp10')
+
 const agent = require('../../dd-trace/test/plugins/agent')
-const plugin = require('../src')
 
 describe('Plugin', () => {
   let tracer
@@ -11,7 +12,7 @@ describe('Plugin', () => {
   let callbackPolicy
 
   describe('amqp10', () => {
-    withVersions(plugin, 'amqp10', version => {
+    withVersions('amqp10', 'amqp10', version => {
       beforeEach(() => {
         tracer = require('../../dd-trace')
       })
