@@ -23,7 +23,7 @@ class B3Propagator {
     carrier[sampledKey] = spanContext._sampling.priority >= AUTO_KEEP ? '1' : '0'
 
     if (spanContext._sampling.priority > AUTO_KEEP) {
-      carrier[flagsKey] = '1' // debug flag means force trace
+      carrier[flagsKey] = '1'
     }
 
     const parentId = spanContext._parentId && spanContext._parentId.toString('hex')
