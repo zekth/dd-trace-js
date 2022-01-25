@@ -5,6 +5,7 @@ const agent = require('../agent')
 const types = require('../../../../../ext/types')
 const kinds = require('../../../../../ext/kinds')
 const tags = require('../../../../../ext/tags')
+const { USER_REJECT } = require('../../../../../ext/priority')
 
 const WEB = types.WEB
 const SERVER = kinds.SERVER
@@ -389,6 +390,20 @@ describe('plugins/util/web', () => {
             [HTTP_URL]: 'https://localhost/user/123',
             [HTTP_METHOD]: 'GET',
             [SPAN_KIND]: SERVER
+          })
+        })
+      })
+
+      it('should drop filtered out traces', () => {
+        config.filter = () => false
+
+        web.instrument(tracer, config, req, res, 'test.request', span => {
+          const sampling = span.context()._sampling
+
+          res.end()
+
+          expect(sampling).to.include({
+            priority: USER_REJECT
           })
         })
       })
