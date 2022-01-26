@@ -90,6 +90,8 @@ function wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2 , endCh, errorCh,
     debugger;
     
     wrapEnd(req, asyncEndCh1, asyncEndCh2, endCh, errorCh)
+    bindEventEmitter(req)
+    bindEventEmitter(res)
     // wrapEvents(req, endCh)
     // const cb = bind(function () {
     //   asyncEndCh.publish(undefined)
@@ -104,6 +106,7 @@ function wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2 , endCh, errorCh,
 
   return callback && asyncResource.runInAsyncScope(() => {
     // return callback.apply(this, arguments)
+    debugger;
     callback()
   })
 }
@@ -149,14 +152,16 @@ function wrapEnd (req, asyncEndCh1, asyncEndCh2, endCh, errorCh) {
     },
     set (value) {
       debugger;
-      this._datadog_end = bind(value, req._datadog.span)
+      this._datadog_end = bindAsyncResource(asyncResource, value)
     }
   })
   debugger;
+  // console.log(res.end.toString())
+  // res.end = bind(res.end)
   bindEventEmitter(res)
 }
 
 function wrapEvents (req) {
   debugger;
-  req._datadog.res = bind(req._datadog.span)
+  return req
 }
