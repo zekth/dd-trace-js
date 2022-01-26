@@ -1,6 +1,6 @@
 'use strict'
 
-const { AsyncResource } = require('async_hooks')
+const { executionAsyncId, triggerAsyncId, AsyncResource } = require('async_hooks')
 const {
   channel,
   addHook,
@@ -19,22 +19,45 @@ addHook({ name: 'http' }, http => {
   const errorCh = channel('apm:http:request:error')
 
   // if (this.config.server === false) return
+  if (http.ServerResponse) { // not present on https
+    // Scope._wrapEmitter(http.ServerResponse.prototype)
+    debugger;
+    bindEventEmitter(http.ServerResponse.prototype)
+  }
 
   shimmer.wrap(http.Server.prototype, 'emit', (emit) => function (eventName, req, res) {
     const asyncResource = new AsyncResource('bound-anonymous-fn')
     debugger;
     const config = web.web.normalizeConfig({})
 
+    if (req && req.ServerResponse) {
+      console.log(1)
+      bindEventEmitter(req.ServerResponse.prototype)
+    }
+
+    if (res && res.ServerResponse) {
+      console.log(2)
+      bindEventEmitter(res.ServerResponse.prototype)
+    }
     
     if (!startCh.hasSubscribers) {
       return emit.apply(this, arguments)
     }
+    // if (res) {
+    //   debugger;
+    //   bindEventEmitter(res)
+    // }
 
     if (eventName === 'request') {
       debugger;
-
-      return wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2, endCh, errorCh, asyncResource, req, res, config, () => {
-        return emit.apply(this, arguments)
+      const id = executionAsyncId()
+      return wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2, endCh, errorCh, req, res, config, () => {
+        debugger;
+        console.log(id, triggerAsyncId())
+        const returnVal = emit.apply(this, arguments)
+        debugger;
+        console.log(2, returnVal)
+        return returnVal
       })
     }
     debugger;
@@ -42,10 +65,7 @@ addHook({ name: 'http' }, http => {
     return emit.apply(this, arguments)
   })
 
-  if (http.ServerResponse) { // not present on https
-    // Scope._wrapEmitter(http.ServerResponse.prototype)
-    bindEventEmitter(http.ServerResponse.prototype)
-  }
+  
 
   return http
 })  
@@ -60,27 +80,31 @@ function wrapCallback (ar, callback) {
   }
 }
 
-function wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2 , endCh, errorCh, ar, req, res, config, callback) {
+function wrapInstrumentation(startCh, asyncEndCh1, asyncEndCh2 , endCh, errorCh, req, res, config, callback) {
   debugger;
+  const asyncResource = new AsyncResource('bound-anonymous-fn')
   startCh.publish([req, res, config])
   debugger;
 
   if (!req._datadog.instrumented) {
     debugger;
+    
     wrapEnd(req, asyncEndCh1, asyncEndCh2, endCh, errorCh)
     // wrapEvents(req, endCh)
     // const cb = bind(function () {
     //   asyncEndCh.publish(undefined)
     //   endCh.publish(undefined)
     // })
+    wrapEvents(req)
+    debugger;
     
-
     req._datadog.instrumented = true
     endCh.publish(undefined)
   }
 
-  return callback && ar.runInAsyncScope(() => {
-    return callback.apply(this, arguments)
+  return callback && asyncResource.runInAsyncScope(() => {
+    // return callback.apply(this, arguments)
+    callback()
   })
 }
 
@@ -89,41 +113,50 @@ function beforeEnd (req, callback) {
 }
 
 function wrapEnd (req, asyncEndCh1, asyncEndCh2, endCh, errorCh) {
+  const asyncResource = new AsyncResource('bound-anonymous-fn')
   // const scope = req._datadog.tracer.scope()
   const res = req._datadog.res
   const end = res.end
 
-  res.writeHead = web.wrapWriteHead(req)
+  req._datadog.res.writeHead = web.wrapWriteHead(req)
 
-  res._datadog_end = function () {
+  req._datadog.res._datadog_end = function () {
     debugger;
     for (const beforeEnd of req._datadog.beforeEnd) {
       beforeEnd()
     }
-
-    asyncEndCh1.publish([req])
     
-    const returnValue = end.apply(res, arguments)
-
+    if (!req._datadog.finished) {
+      asyncEndCh1.publish([req])
+    }
+   
+    debugger;
+    const returnValue = req._datadog.res.end.apply(res, arguments)
+    bindEventEmitter(returnValue)
+    debugger;
     // finish(req, res)
     asyncEndCh2.publish([req,res])
     
     return returnValue
   }
   debugger;
+  console.log(Object.toString())
   Object.defineProperty(res, 'end', {
     configurable: true,
     get () {
+      debugger;
       return this._datadog_end
     },
     set (value) {
-      this._datadog_end = bind(value)
+      debugger;
+      this._datadog_end = bind(value, req._datadog.span)
     }
   })
+  debugger;
+  bindEventEmitter(res)
 }
 
-function wrapEvents (req, endCh) {
+function wrapEvents (req) {
   debugger;
-  const res = bind(req._datadog.res)
-  endCh.publish(undefined)
+  req._datadog.res = bind(req._datadog.span)
 }

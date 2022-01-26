@@ -87,6 +87,7 @@ class HttpPlugin extends Plugin {
     })
 
     this.addSub('apm:http:request:error', err => {
+      debugger;
       if (err) {
         const span = storage.getStore().span
         span.setTag('error', err)
@@ -94,6 +95,7 @@ class HttpPlugin extends Plugin {
     })
 
     this.addSub('apm:http:request:async-end1', ([req]) => {
+      debugger;
       if (req._datadog.finished) return
 
       let span
@@ -101,10 +103,16 @@ class HttpPlugin extends Plugin {
       while ((span = req._datadog.middleware.pop())) {
         span.finish()
       }
+
+      // span = storage.getStore().span
+      // span.finish()
     })
 
     this.addSub('apm:http:request:async-end2', ([req, res]) => {
+      debugger;
       web.finish(req, res)
+      const span = storage.getStore().span
+      span.finish()
     })
   }
 }

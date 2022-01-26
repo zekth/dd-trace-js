@@ -73,6 +73,9 @@ describe('Plugin', () => {
         debugger;
         app = (req, res) => {
           debugger;
+          // console.log(1, app)
+          // console.log(2, req)
+          // console.log(3, res)
           expect(tracer.scope().active()).to.not.be.null
 
           expect(spy).to.have.been.calledOnceWithExactly({ req, res }, incomingHttpRequestStart.name)
