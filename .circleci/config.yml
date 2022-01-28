@@ -571,7 +571,13 @@ jobs:
 
   node-net: *node-plugin-base
 
-  node-next: *node-plugin-base
+  node-next:
+    <<: *node-plugin-base
+    docker:
+      - image: node:<< parameters.node-version >>
+        environment:
+          - NODE_OPTIONS=--openssl-legacy-provider
+          - PLUGINS=next
 
   node-oracledb:
     <<: *node-plugin-base
