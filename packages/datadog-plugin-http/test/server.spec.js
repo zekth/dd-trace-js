@@ -71,11 +71,13 @@ describe('Plugin', () => {
 
       it.only('should run the request listener in the request scope', done => {
         debugger;
+        const spy = sinon.spy(() => {
+          expect(tracer.scope().active()).to.not.be.null
+        })
+
+        incomingHttpRequestStart.subscribe(spy)
+
         app = (req, res) => {
-          debugger;
-          // console.log(1, app)
-          // console.log(2, req)
-          // console.log(3, res)
           expect(tracer.scope().active()).to.not.be.null
 
           expect(spy).to.have.been.calledOnceWithExactly({ req, res }, incomingHttpRequestStart.name)
