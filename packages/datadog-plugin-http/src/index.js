@@ -111,8 +111,8 @@ class HttpPlugin extends Plugin {
     this.addSub('apm:http:request:async-end2', ([req, res]) => {
       debugger;
       web.finish(req, res)
-      const span = storage.getStore().span
-      span.finish()
+      // const span = storage.getStore().span
+      // span.finish()
     })
   }
 }
