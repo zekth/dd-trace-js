@@ -4,6 +4,7 @@ const getPort = require('get-port')
 const agent = require('../../dd-trace/test/plugins/agent')
 const axios = require('axios')
 const proxyquire = require('proxyquire').noPreserveCache()
+const { incomingHttpRequestStart } = require('../../dd-trace/src/appsec/gateway/channels')
 
 describe('Plugin', () => {
   let http
@@ -50,7 +51,6 @@ describe('Plugin', () => {
       })
 
       it('should do automatic instrumentation', done => {
-        debugger;
         agent
           .use(traces => {
             debugger;
@@ -69,8 +69,7 @@ describe('Plugin', () => {
         axios.get(`http://localhost:${port}/user`).catch(done)
       })
 
-      it.only('should run the request listener in the request scope', done => {
-        debugger;
+      it('should run the request listener in the request scope', done => {
         const spy = sinon.spy(() => {
           expect(tracer.scope().active()).to.not.be.null
         })

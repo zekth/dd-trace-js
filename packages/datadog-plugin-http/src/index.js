@@ -8,6 +8,7 @@ const FORMAT_HTTP_HEADERS = require('opentracing').FORMAT_HTTP_HEADERS
 const tags = require('../../../ext/tags')
 const types = require('../../../ext/types')
 const kinds = require('../../../ext/kinds')
+const formats = require('../../../ext/formats')
 const WEB = types.WEB
 const SERVER = kinds.SERVER
 const RESOURCE_NAME = tags.RESOURCE_NAME
@@ -25,6 +26,9 @@ const HTTP_RESPONSE_HEADERS = tags.HTTP_RESPONSE_HEADERS
 const HTTP2_HEADER_AUTHORITY = ':authority'
 const HTTP2_HEADER_SCHEME = ':scheme'
 const HTTP2_HEADER_PATH = ':path'
+
+const HTTP_HEADERS = formats.HTTP_HEADERS
+const CLIENT = kinds.CLIENT
 
 class HttpPlugin extends Plugin {
   static get name () {
@@ -103,16 +107,87 @@ class HttpPlugin extends Plugin {
       while ((span = req._datadog.middleware.pop())) {
         span.finish()
       }
-
-      // span = storage.getStore().span
-      // span.finish()
     })
 
-    this.addSub('apm:http:request:async-end2', ([req, res]) => {
+    this.addSub('apm:http:request:async-end2', ([req,res]) => {
       debugger;
       web.finish(req, res)
-      // const span = storage.getStore().span
-      // span.finish()
+    })
+
+    this.addSub('apm:httpClient:request:start', ([args, config]) => {
+      debugger;
+      
+      const store = storage.getStore()
+
+      const options = args.options
+      const agent = options.agent || options._defaultAgent || http.globalAgent
+      const protocol = options.protocol || agent.protocol || 'http:'
+      const hostname = options.hostname || options.host || 'localhost'
+      const host = options.port ? `${hostname}:${options.port}` : hostname
+      const path = options.path ? options.path.split(/[?#]/)[0] : '/'
+      const uri = `${protocol}//${host}${path}`
+
+      const method = (options.method || 'GET').toUpperCase()
+
+      // const scope = tracer.scope()
+      // const childOf = scope.active()
+      const childOf = store ? store.span : store
+      const span = this.tracer.startSpan('http.request', {
+        childOf,
+        tags: {
+          [SPAN_KIND]: CLIENT,
+          'service.name': getServiceName(this.tracer, config, options),
+          'resource.name': method,
+          'span.type': 'http',
+          'http.method': method,
+          'http.url': uri
+        }
+      })
+
+      if (!(hasAmazonSignature(options) || !config.propagationFilter(uri))) {
+        this.tracer.inject(span, HTTP_HEADERS, options.headers)
+      }
+
+      analyticsSampler.sample(span, this.config.measured)
+
+
+    })
+
+    this.addSub('apm:httpClient:request:end', () => {
+      debugger;
+      this.exit()
+    })
+
+    this.addSub('apm:httpClient:request:async-end', ([req, res, config]) => {
+      const span = storage.getStore().span
+      if (res) {
+        span.setTag(HTTP_STATUS_CODE, res.statusCode)
+  
+        if (!config.validateStatus(res.statusCode)) {
+          span.setTag('error', 1)
+        }
+  
+        addResponseHeaders(res, span, config)
+      } else {
+        span.setTag('error', 1)
+      }
+  
+      addRequestHeaders(req, span, config)
+  
+      config.hooks.request(span, req, res)
+  
+      span.finish()
+    })
+
+    this.addSub('apm:httpClient:request:error', ([error]) => {
+      debugger;
+      const span = storage.getStore().span
+      span.addTags({
+        'error.type': error.name,
+        'error.msg': error.message,
+        'error.stack': error.stack
+      })
+  
     })
   }
 }
@@ -132,6 +207,74 @@ function patch (req) {
     beforeEnd: [],
     config: {}
   }
+}
+
+function hasAmazonSignature (options) {
+  if (!options) {
+    return false
+  }
+
+  if (options.headers) {
+    const headers = Object.keys(options.headers)
+      .reduce((prev, next) => Object.assign(prev, {
+        [next.toLowerCase()]: options.headers[next]
+      }), {})
+
+    if (headers['x-amz-signature']) {
+      return true
+    }
+
+    if ([].concat(headers['authorization']).some(startsWith('AWS4-HMAC-SHA256'))) {
+      return true
+    }
+  }
+
+  return options.path && options.path.toLowerCase().indexOf('x-amz-signature=') !== -1
+}
+
+function getServiceName (tracer, config, options) {
+  if (config.splitByDomain) {
+    return getHost(options)
+  } else if (config.service) {
+    return config.service
+  }
+
+  return `${tracer._service}-http-client`
+}
+
+function addResponseHeaders (res, span, config) {
+  config.headers.forEach(key => {
+    const value = res.headers[key]
+
+    if (value) {
+      span.setTag(`${HTTP_RESPONSE_HEADERS}.${key}`, value)
+    }
+  })
+}
+
+function addRequestHeaders (req, span, config) {
+  config.headers.forEach(key => {
+    const value = req.getHeader(key)
+
+    if (value) {
+      span.setTag(`${HTTP_REQUEST_HEADERS}.${key}`, value)
+    }
+  })
+}
+
+function getHost (options) {
+  if (typeof options === 'string') {
+    return url.parse(options).host
+  }
+
+  const hostname = options.hostname || options.host || 'localhost'
+  const port = options.port
+
+  return [hostname, port].filter(val => val).join(':')
+}
+
+function startsWith (searchString) {
+  return value => String(value).startsWith(searchString)
 }
 
 module.exports = HttpPlugin

@@ -172,3 +172,12 @@ function wrapRemoveAllListener (removeAllListeners) {
     removeAllListeners.call(this, name, bound)
   }
 }
+
+exports.bindEmit = function bindEmit (emitter, asyncResource) {
+  shimmer.wrap(emitter, 'emit', emit => function (eventName, ...args) {
+    const ar = asyncResource ? asyncResource : new AsyncResource('bound-anonymous-fn')
+    return ar.runInAsyncScope(() => {
+      return emit.apply(this, arguments)
+    })
+  })
+}

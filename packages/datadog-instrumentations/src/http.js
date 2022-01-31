@@ -5,45 +5,171 @@ const {
   channel,
   addHook,
   AsyncResource,
-  bindEventEmitter
+  bindEventEmitter,
+  bindEmit
 } = require('./helpers/instrument')
 const shimmer = require('../../datadog-shimmer')
 const web = require('../../dd-trace/src/plugins/util/web')
 const { storage } = require('../../datadog-core')
 const { incomingHttpRequestStart } = require('../../dd-trace/src/appsec/gateway/channels')
+const {
+  normalizeConfig
+} = require('./helpers/web')
+const log = require('../../dd-trace/src/log')
+
+
+function patch (http, methodName) {
+  const startCh = channel('apm:httpClient:request:start')
+  const asyncEndCh = channel('apm:httpClient:request:async-end')
+  const endCh = channel('apm:httpClient:request:end')
+  const errorCh = channel('apm:httpClient:request:error')
+
+  config = normalizeConfig(this.config)
+  shimmer.wrap(http, methodName, fn => makeRequestTrace(fn))
+  
+  function makeRequestTrace (request) {
+    return function requestTrace () {
+      const store = storage.getStore()
+      if (store && store.noop) return request.apply(this, arguments)
+
+      let args
+
+      try {
+        args = normalizeArgs.apply(null, arguments)
+      } catch (e) {
+        log.error(e)
+        return request.apply(this, arguments)
+      }
+
+      let callback = args.callback
+
+      callback = AsyncResource.bind(callback)
+      const options = args.options
+      const req = AsyncResource.bind(request).call(this, options, callback)
+      const emit = req.emit
+
+      req.emit = function (eventName, arg) {
+        switch (eventName) {
+          case 'response': {
+            const res = arg
+
+            AsyncResource.bind(res)
+
+            res.on('end', () => asyncEndCh.publish([req, res, this.config]))
+
+            break
+          }
+          case 'error':
+            errorCh.publish([arg])
+          case 'abort': // eslint-disable-line no-fallthrough
+          case 'timeout': // eslint-disable-line no-fallthrough
+            asyncEndCh.publish([req, null, this.config])
+        }
+
+        return emit.apply(this, arguments)
+      }
+
+      AsyncResource.bind(req)
+
+      return req
+    }
+  }
+
+  function normalizeArgs (inputURL, inputOptions, cb) {
+    inputURL = normalizeOptions(inputURL)
+
+    const [callback, inputOptionsNormalized] = normalizeCallback(inputOptions, cb, inputURL)
+    const options = combineOptions(inputURL, inputOptionsNormalized)
+    normalizeHeaders(options)
+    const uri = url.format(options)
+
+    return { uri, options, callback }
+  }
+
+  function combineOptions (inputURL, inputOptions) {
+    if (typeof inputOptions === 'object') {
+      return Object.assign(inputURL || {}, inputOptions)
+    } else {
+      return inputURL
+    }
+  }
+  function normalizeHeaders (options) {
+    options.headers = options.headers || {}
+  }
+
+  function normalizeCallback (inputOptions, callback, inputURL) {
+    if (typeof inputOptions === 'function') {
+      return [inputOptions, inputURL || {}]
+    } else {
+      return [callback, inputOptions]
+    }
+  }
+
+  function normalizeOptions (inputURL) {
+    if (typeof inputURL === 'string') {
+      try {
+        return urlToOptions(new url.URL(inputURL))
+      } catch (e) {
+        return url.parse(inputURL)
+      }
+    } else if (inputURL instanceof url.URL) {
+      return urlToOptions(inputURL)
+    } else {
+      return inputURL
+    }
+  }
+
+  function urlToOptions (url) {
+    const agent = url.agent || http.globalAgent
+    const options = {
+      protocol: url.protocol || agent.protocol,
+      hostname: typeof url.hostname === 'string' && url.hostname.startsWith('[')
+        ? url.hostname.slice(1, -1)
+        : url.hostname ||
+        url.host ||
+        'localhost',
+      hash: url.hash,
+      search: url.search,
+      pathname: url.pathname,
+      path: `${url.pathname || ''}${url.search || ''}`,
+      href: url.href
+    }
+    if (url.port !== '') {
+      options.port = Number(url.port)
+    }
+    if (url.username || url.password) {
+      options.auth = `${url.username}:${url.password}`
+    }
+    return options
+  }
+
+  
+}
+
+addHook({ name: 'https' }, http => {
+  debugger;
+  patch.call(this, http, 'request')
+  patch.call(this, http, 'get')
+})
 
 addHook({ name: 'http' }, http => {
+  debugger;
   const startCh = channel('apm:http:request:start')
   const asyncEndCh1 = channel('apm:http:request:async-end1')
   const asyncEndCh2 = channel('apm:http:request:async-end2')
   const endCh = channel('apm:http:request:end')
   const errorCh = channel('apm:http:request:error')
 
-  // if (this.config.server === false) return
-  
+  // patch.call(this, http, 'request')
+  // patch.call(this, http, 'get')
 
   shimmer.wrap(http.Server.prototype, 'emit', (emit) => function (eventName, req, res) {
     const asyncResource = new AsyncResource('bound-anonymous-fn')
-    debugger;
     const config = web.web.normalizeConfig({})
-    
-    // if (req && req.ServerResponse) {
-    //   console.log(1)
-    //   bindEventEmitter(req.ServerResponse.prototype)
-    // }
-
-    // if (res && res.ServerResponse) {
-    //   console.log(2)
-    //   bindEventEmitter(res.ServerResponse.prototype)
-    // }
     
     if (!startCh.hasSubscribers) {
       return emit.apply(this, arguments)
     }
-    // if (res) {
-    //   debugger;
-    //   bindEventEmitter(res)
-    // }
 
     if (eventName === 'request') {
       debugger;
@@ -53,7 +179,7 @@ addHook({ name: 'http' }, http => {
         if (incomingHttpRequestStart.hasSubscribers) {
           incomingHttpRequestStart.publish({ req, res })
         }
-        console.log(45, storage.getStore())
+        // console.log(45, storage.getStore())
         try {
           return emit.apply(this, arguments)
         } catch (err) {
@@ -74,21 +200,12 @@ addHook({ name: 'http' }, http => {
   if (http.ServerResponse) { // not present on https
     // Scope._wrapEmitter(http.ServerResponse.prototype)
     debugger;
-    bindEventEmitter(http.ServerResponse.prototype)
+    // bindEventEmitter(http.ServerResponse.prototype)
+    bindEmit(http.ServerResponse.prototype)
   }
 
   return http
 })  
-
-function wrapCallback (ar, callback) {
-  if (typeof callback !== 'function') return callback
-
-  return function () {
-    return ar.runInAsyncScope(() => {
-      return callback.apply(this, arguments)
-    })
-  }
-}
 
 function wrapInstrumentation(startCh, asyncResource, asyncEndCh1, asyncEndCh2 , endCh, errorCh, req, res, config, callback) {
   debugger;
@@ -101,30 +218,17 @@ function wrapInstrumentation(startCh, asyncResource, asyncEndCh1, asyncEndCh2 , 
     debugger;
     
     wrapEnd(req, asyncEndCh1, asyncEndCh2, endCh, errorCh)
-    // bindEventEmitter(req)
-    // bindEventEmitter(res)
-    // wrapEvents(req, endCh)
-    // const cb = bind(function () {
-    //   asyncEndCh.publish(undefined)
-    //   endCh.publish(undefined)
-    // })
-    
-    wrapEvents(req)
-    debugger;
     
     req._datadog.instrumented = true
-    console.log(33, storage.getStore())
+    // console.log(33, storage.getStore())
   }
   
   // callback = asyncResource.bind(callback)
   const ar = new AsyncResource('bound-anonymous-fn')
 
   return callback && ar.runInAsyncScope(() => {
-    console.log(45, storage.getStore())
     return callback.apply(this, arguments)
-    debugger;
   })
-  // return callback && asyncResource.bind(callback, this).apply(this, arguments)
 }
 
 function beforeEnd (req, callback) {
@@ -133,7 +237,6 @@ function beforeEnd (req, callback) {
 
 function wrapEnd (req, asyncEndCh1, asyncEndCh2, endCh, errorCh) {
   const asyncResource = new AsyncResource('bound-anonymous-fn')
-  // const scope = req._datadog.tracer.scope()
   const res = req._datadog.res
   const end = res.end
 
@@ -148,12 +251,8 @@ function wrapEnd (req, asyncEndCh1, asyncEndCh2, endCh, errorCh) {
     if (!req._datadog.finished) {
       asyncEndCh1.publish([req])
     }
-   
-    debugger;
+
     const returnValue = end.apply(res, arguments)
-    bindEventEmitter(returnValue)
-    debugger;
-    // finish(req, res)
     asyncEndCh2.publish([req,res])
     
     return returnValue
@@ -170,16 +269,4 @@ function wrapEnd (req, asyncEndCh1, asyncEndCh2, endCh, errorCh) {
       this._datadog_end = asyncResource.bind(asyncResource, value)
     }
   })
-  debugger;
-  // console.log(res.end.toString())
-  // res.end = bind(res.end)
-  // bindEventEmitter(res)
-}
-
-function wrapEvents (req) {
-  debugger;
-  // return req
-  const res = req._datadog.res
-
-  // AsyncResource.bind(res, req._datadog.span)
 }

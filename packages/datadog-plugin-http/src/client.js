@@ -113,7 +113,7 @@ function patch (http, methodName, tracer, config) {
     }
 
     addRequestHeaders(req, span, config)
-
+ 
     config.hooks.request(span, req, res)
 
     span.finish()
