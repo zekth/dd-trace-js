@@ -39,7 +39,6 @@ describe('Plugin', () => {
       beforeEach(() => {
         return agent.load('http')
           .then(() => {
-            // http = require('http')
             http = proxyquire('http', {})
           })
       })
@@ -53,7 +52,6 @@ describe('Plugin', () => {
       it('should do automatic instrumentation', done => {
         agent
           .use(traces => {
-            debugger;
             expect(traces[0][0]).to.have.property('name', 'http.request')
             expect(traces[0][0]).to.have.property('service', 'test')
             expect(traces[0][0]).to.have.property('type', 'web')

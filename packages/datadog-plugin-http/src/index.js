@@ -1,34 +1,23 @@
 'use strict'
 
+const url = require('url')
 const Plugin = require('../../dd-trace/src/plugins/plugin')
 const { storage } = require('../../datadog-core')
 const analyticsSampler = require('../../dd-trace/src/analytics_sampler')
-const web = require('../../dd-trace/src/plugins/util/web')
-const FORMAT_HTTP_HEADERS = require('opentracing').FORMAT_HTTP_HEADERS
 const tags = require('../../../ext/tags')
-const types = require('../../../ext/types')
 const kinds = require('../../../ext/kinds')
 const formats = require('../../../ext/formats')
-const WEB = types.WEB
-const SERVER = kinds.SERVER
-const RESOURCE_NAME = tags.RESOURCE_NAME
-const SERVICE_NAME = tags.SERVICE_NAME
-const SPAN_TYPE = tags.SPAN_TYPE
-const SPAN_KIND = tags.SPAN_KIND
-const ERROR = tags.ERROR
-const HTTP_METHOD = tags.HTTP_METHOD
-const HTTP_URL = tags.HTTP_URL
-const HTTP_STATUS_CODE = tags.HTTP_STATUS_CODE
-const HTTP_ROUTE = tags.HTTP_ROUTE
-const HTTP_REQUEST_HEADERS = tags.HTTP_REQUEST_HEADERS
-const HTTP_RESPONSE_HEADERS = tags.HTTP_RESPONSE_HEADERS
 const urlFilter = require('../../dd-trace/src/plugins/util/urlfilter')
-const HTTP2_HEADER_AUTHORITY = ':authority'
-const HTTP2_HEADER_SCHEME = ':scheme'
-const HTTP2_HEADER_PATH = ':path'
+const log = require('../../dd-trace/src/log')
+const web = require('../../datadog-instrumentations/src/helpers/web')
 
 const HTTP_HEADERS = formats.HTTP_HEADERS
 const CLIENT = kinds.CLIENT
+const SERVICE_NAME = tags.SERVICE_NAME
+const SPAN_KIND = tags.SPAN_KIND
+const HTTP_STATUS_CODE = tags.HTTP_STATUS_CODE
+const HTTP_REQUEST_HEADERS = tags.HTTP_REQUEST_HEADERS
+const HTTP_RESPONSE_HEADERS = tags.HTTP_RESPONSE_HEADERS
 
 class HttpPlugin extends Plugin {
   static get name () {
@@ -38,101 +27,40 @@ class HttpPlugin extends Plugin {
   constructor (...args) {
     super(...args)
 
-    debugger;
-    console.log(8888, this.config)
-    // console.log(this.config)
-    if (this && this.config && this.config.server === false) return
-
-    // console.log(99999, this.config)
-
-    this.addSub('apm:http:request:start', ([req, res, conf]) => {
-      debugger;
+    this.addSub('apm:httpServer:request:start', ([req, res]) => {
       if (this.config.server === false) return
       const store = storage.getStore()
-      // console.log(store)
-      // if (store && store.noop) return
-      // const childOf = store ? store.span : store
-      console.log(99999, this.config)
-      // if (this.config.server === false) return
-      patch(req)
+      this.config = web.web.normalizeConfig(this.config)
 
-      req._datadog.config = conf
-      const name = 'http.request'
+      const span = web.startSpan(this.tracer, this.config, req, res, 'http.request', store)
 
-      let span
-      
-      if (req._datadog.span) {
-        req._datadog.span.context()._name = name
-        span = req._datadog.span
-      } else {
-        debugger;
-        const temp1 = store ? store.span : store
-        const temp2 = this.tracer.extract('http_headers', req.headers)
-        const childOf = temp1 || temp2
-        span = this.tracer.startSpan('http.request', { childOf })
-      }
-
-      debugger;
-      req._datadog.tracer = this.tracer
-      req._datadog.span = span
-      req._datadog.res = res
-      const ddObj = req._datadog
-      ddObj.tracer = this.tracer
-      ddObj.span = span
-      ddObj.res = res
-
-      if (!conf.filter(req.url)) {
+      if (!this.config.filter(req.url)) {
         span.context()._traceFlags.sampled = false
       }
-  
-      if (conf.service) {
-        span.setTag(SERVICE_NAME, config.service)
+
+      if (this.config.service) {
+        span.setTag(SERVICE_NAME, this.config.service)
       }
 
       analyticsSampler.sample(span, this.config.measured, true)
       this.enter(span, store)
     })
 
-    this.addSub('apm:http:request:end', () => {
-      debugger;
+    this.addSub('apm:httpServer:request:end', () => {
       if (this.config.server === false) return
       this.exit()
     })
 
-    this.addSub('apm:http:request:error', err => {
-      debugger;
+    this.addSub('apm:httpServer:request:error', err => {
       if (this.config.server === false) return
-      if (err) {
-        const span = storage.getStore().span
-        span.setTag('error', err)
-      }
-    })
-
-    this.addSub('apm:http:request:async-end1', ([req]) => {
-      debugger;
-      if (this.config.server === false) return
-      if (req._datadog.finished) return
-
-      let span
-
-      while ((span = req._datadog.middleware.pop())) {
-        span.finish()
-      }
-    })
-
-    this.addSub('apm:http:request:async-end2', ([req,res]) => {
-      if (this.config.server === false) return
-      debugger;
-      web.finish(req, res)
+      const span = storage.getStore().span
+      span.setTag('error', err)
     })
 
     this.addSub('apm:httpClient:request:start', ([args, http]) => {
-      debugger;
-      console.log(50000)
       if (this.config.client === false) return
-      
+
       const store = storage.getStore()
-      
       this.config = normalizeConfig(this.config)
       const options = args.options
       const agent = options.agent || options._defaultAgent || http.globalAgent
@@ -143,11 +71,8 @@ class HttpPlugin extends Plugin {
       const uri = `${protocol}//${host}${path}`
 
       const method = (options.method || 'GET').toUpperCase()
-
-      // const scope = tracer.scope()
-      // const childOf = scope.active()
       const childOf = store ? store.span : store
-      
+
       const span = this.tracer.startSpan('http.request', {
         childOf,
         tags: {
@@ -165,12 +90,10 @@ class HttpPlugin extends Plugin {
       }
 
       analyticsSampler.sample(span, this.config.measured)
-      // console.log(7777)
       this.enter(span, store)
     })
 
     this.addSub('apm:httpClient:request:end', () => {
-      debugger;
       if (this.config.client === false) return
       this.exit()
     })
@@ -180,51 +103,31 @@ class HttpPlugin extends Plugin {
       const span = storage.getStore().span
       if (res) {
         span.setTag(HTTP_STATUS_CODE, res.statusCode)
-  
+
         if (!this.config.validateStatus(res.statusCode)) {
           span.setTag('error', 1)
         }
-  
+
         addResponseHeaders(res, span, this.config)
       } else {
         span.setTag('error', 1)
       }
-  
+
       addRequestHeaders(req, span, this.config)
-  
+
       this.config.hooks.request(span, req, res)
-  
       span.finish()
     })
 
     this.addSub('apm:httpClient:request:error', ([error]) => {
       if (this.config.client === false) return
-      debugger;
       const span = storage.getStore().span
       span.addTags({
         'error.type': error.name,
         'error.msg': error.message,
         'error.stack': error.stack
       })
-  
     })
-  }
-}
-
-function patch (req) {
-  if (req._datadog) return
-
-  if (req.stream && req.stream._datadog) {
-    req._datadog = req.stream._datadog
-    return
-  }
-
-  req._datadog = {
-    span: null,
-    paths: [],
-    middleware: [],
-    beforeEnd: [],
-    config: {}
   }
 }
 
@@ -297,7 +200,6 @@ function startsWith (searchString) {
 }
 
 function normalizeConfig (config) {
-  debugger;
   config = config.client || config
 
   const validateStatus = getStatusValidator(config)
@@ -312,7 +214,7 @@ function normalizeConfig (config) {
     hooks
   })
 }
-  
+
 function getStatusValidator (config) {
   if (typeof config.validateStatus === 'function') {
     return config.validateStatus

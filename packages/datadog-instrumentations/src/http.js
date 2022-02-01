@@ -1,61 +1,44 @@
 'use strict'
 
-const { executionAsyncId, triggerAsyncId } = require('async_hooks')
 const url = require('url')
 const {
   channel,
   addHook,
-  AsyncResource,
-  bindEventEmitter,
-  bindEmit
+  AsyncResource
 } = require('./helpers/instrument')
 const shimmer = require('../../datadog-shimmer')
-const web = require('../../dd-trace/src/plugins/util/web')
 const { storage } = require('../../datadog-core')
 const { incomingHttpRequestStart } = require('../../dd-trace/src/appsec/gateway/channels')
-const {
-  normalizeConfig
-} = require('./helpers/web')
-const urlFilter = require('../../dd-trace/src/plugins/util/urlfilter')
+const web = require('./helpers/web')
 const log = require('../../dd-trace/src/log')
 
-const startCh = channel('apm:http:request:start')
-const asyncEndCh1 = channel('apm:http:request:async-end1')
-const asyncEndCh2 = channel('apm:http:request:async-end2')
-const endCh = channel('apm:http:request:end')
-const errorCh = channel('apm:http:request:error')
+const startServerCh = channel('apm:httpServer:request:start')
+const endServerCh = channel('apm:httpServer:request:end')
+const errorServerCh = channel('apm:httpServer:request:error')
+
+const startClientCh = channel('apm:httpClient:request:start')
+const asyncEndClientCh = channel('apm:httpClient:request:async-end')
+const endClientCh = channel('apm:httpClient:request:end')
+const errorClientCh = channel('apm:httpClient:request:error')
 
 function patch (http, methodName) {
-  const startClientCh = channel('apm:httpClient:request:start')
-  const asyncEndClientCh = channel('apm:httpClient:request:async-end')
-  const endClientCh = channel('apm:httpClient:request:end')
-  const errorClientCh = channel('apm:httpClient:request:error')
-  debugger;
-  
   shimmer.wrap(http, methodName, fn => makeRequestTrace(fn))
-  
+
   function makeRequestTrace (request) {
     return function requestTrace () {
       const asyncResource = new AsyncResource('bound-anonymous-fn')
       const store = storage.getStore()
-      
-      if (store && store.noop) return request.apply(this, arguments)
 
-      console.log(101)
+      if (store && store.noop) return request.apply(this, arguments)
 
       let args
 
       try {
-        debugger;
-        // startCh.publish(arguments)
         args = normalizeArgs.apply(null, arguments)
-        // console.log(55, args)
       } catch (e) {
-        // console.log(e)
         log.error(e)
         return request.apply(this, arguments)
       }
-      debugger;
       startClientCh.publish([args, http])
 
       let callback = args.callback
@@ -63,29 +46,17 @@ function patch (http, methodName) {
       if (callback) {
         callback = asyncResource.bind(callback)
       }
-      
+
       const options = args.options
       const req = AsyncResource.bind(request).call(this, options, callback)
       const emit = req.emit
-      // console.log(100, storage.getStore())
-      
+
       req.emit = function (eventName, arg) {
         switch (eventName) {
           case 'response': {
-            debugger;
             const res = arg
-            
-            // console.log(res)
-            // AsyncResource.bind(res)
             bindEmit(res)
-
-            
-            res.on('end', AsyncResource.bind(() => {
-                debugger;
-                asyncEndClientCh.publish([req, res])
-              }
-            ))
-
+            res.on('end', AsyncResource.bind(() => asyncEndClientCh.publish([req, res])))
             break
           }
           case 'error':
@@ -97,20 +68,16 @@ function patch (http, methodName) {
 
         try {
           return emit.apply(this, arguments)
-        } catch(err) {
+        } catch (err) {
           err.stack // trigger getting the stack at the original throwing point
           errorClientCh.publish(arg)
-    
+
           throw err
         } finally {
           endClientCh.publish(undefined)
         }
-        
       }
-
-      // AsyncResource.bind(req)
       bindEmit(req)
-
       return req
     }
   }
@@ -182,12 +149,9 @@ function patch (http, methodName) {
     }
     return options
   }
-
-  
 }
 
 addHook({ name: 'https' }, http => {
-  debugger;
   patch.call(this, http, 'request')
   patch.call(this, http, 'get')
 
@@ -197,13 +161,6 @@ addHook({ name: 'https' }, http => {
 })
 
 addHook({ name: 'http' }, http => {
-  debugger;
-  
-  // const store = storage.getStore()
-  // console.log(77, store)
-  debugger;
-  // shimmer.wrap(config)
-
   patch.call(this, http, 'request')
   patch.call(this, http, 'get')
 
@@ -212,92 +169,42 @@ addHook({ name: 'http' }, http => {
   if (http.ServerResponse) { // not present on https
     bindEmit(http.ServerResponse.prototype)
   }
-
   return http
-})  
+})
 
-function wrapEmit(emit) {
+function wrapEmit (emit) {
   return function (eventName, req, res) {
-    const asyncResource = new AsyncResource('bound-anonymous-fn')
-    const config = web.web.normalizeConfig({})
-    
-    if (!startCh.hasSubscribers) {
+    if (!startServerCh.hasSubscribers) {
       return emit.apply(this, arguments)
     }
 
     if (eventName === 'request') {
-      
-      return wrapInstrumentation(startCh, asyncResource, asyncEndCh1, asyncEndCh2, endCh, errorCh, req, res, config, () => {
+      return web.web.instrument(startServerCh, req, res, () => {
         if (incomingHttpRequestStart.hasSubscribers) {
           incomingHttpRequestStart.publish({ req, res })
         }
-        // console.log(45, storage.getStore())
         try {
           return emit.apply(this, arguments)
         } catch (err) {
           err.stack // trigger getting the stack at the original throwing point
-          errorCh.publish(err)
+          errorServerCh.publish(err)
 
           throw err
         } finally {
-          endCh.publish(undefined)
+          endServerCh.publish(undefined)
         }
       })
     }
-    
+
     return emit.apply(this, arguments)
   }
 }
 
-function wrapInstrumentation(startCh, asyncResource, asyncEndCh1, asyncEndCh2 , endCh, errorCh, req, res, config, callback) {
-  
-  startCh.publish([req, res, config])
-  
-  if (req._datadog && !req._datadog.instrumented) {
-    
-    wrapEnd(req, asyncEndCh1, asyncEndCh2, endCh, errorCh)
-    
-    req._datadog.instrumented = true
-  }
-  const ar = new AsyncResource('bound-anonymous-fn')
-
-  return callback && ar.runInAsyncScope(() => {
-    return callback.apply(this, arguments)
-  })
-}
-
-function beforeEnd (req, callback) {
-  req._datadog.beforeEnd.push(callback)
-}
-
-function wrapEnd (req, asyncEndCh1, asyncEndCh2, endCh, errorCh) {
-  const asyncResource = new AsyncResource('bound-anonymous-fn')
-  const res = req._datadog.res
-  const end = res.end
-
-  req._datadog.res.writeHead = web.wrapWriteHead(req)
-
-  req._datadog.res._datadog_end = function () {
-    for (const beforeEnd of req._datadog.beforeEnd) {
-      beforeEnd()
-    }
-    
-    if (!req._datadog.finished) {
-      asyncEndCh1.publish([req])
-    }
-
-    const returnValue = end.apply(res, arguments)
-    asyncEndCh2.publish([req,res])
-    
-    return returnValue
-  }
-  Object.defineProperty(res, 'end', {
-    configurable: true,
-    get () {
-      return this._datadog_end
-    },
-    set (value) {
-      this._datadog_end = asyncResource.bind(asyncResource, value)
-    }
+function bindEmit (emitter, asyncResource) {
+  shimmer.wrap(emitter, 'emit', emit => function (eventName, ...args) {
+    const ar = asyncResource || new AsyncResource('bound-anonymous-fn')
+    return ar.runInAsyncScope(() => {
+      return emit.apply(this, arguments)
+    })
   })
 }
