@@ -39,13 +39,21 @@ class HttpPlugin extends Plugin {
     super(...args)
 
     debugger;
+    console.log(8888, this.config)
+    // console.log(this.config)
     if (this && this.config && this.config.server === false) return
+
+    // console.log(99999, this.config)
 
     this.addSub('apm:http:request:start', ([req, res, conf]) => {
       debugger;
+      if (this.config.server === false) return
       const store = storage.getStore()
+      // console.log(store)
+      // if (store && store.noop) return
       // const childOf = store ? store.span : store
-
+      console.log(99999, this.config)
+      // if (this.config.server === false) return
       patch(req)
 
       req._datadog.config = conf
@@ -87,11 +95,13 @@ class HttpPlugin extends Plugin {
 
     this.addSub('apm:http:request:end', () => {
       debugger;
+      if (this.config.server === false) return
       this.exit()
     })
 
     this.addSub('apm:http:request:error', err => {
       debugger;
+      if (this.config.server === false) return
       if (err) {
         const span = storage.getStore().span
         span.setTag('error', err)
@@ -100,6 +110,7 @@ class HttpPlugin extends Plugin {
 
     this.addSub('apm:http:request:async-end1', ([req]) => {
       debugger;
+      if (this.config.server === false) return
       if (req._datadog.finished) return
 
       let span
@@ -110,12 +121,15 @@ class HttpPlugin extends Plugin {
     })
 
     this.addSub('apm:http:request:async-end2', ([req,res]) => {
+      if (this.config.server === false) return
       debugger;
       web.finish(req, res)
     })
 
     this.addSub('apm:httpClient:request:start', ([args, http]) => {
       debugger;
+      console.log(50000)
+      if (this.config.client === false) return
       
       const store = storage.getStore()
       
@@ -134,7 +148,6 @@ class HttpPlugin extends Plugin {
       // const childOf = scope.active()
       const childOf = store ? store.span : store
       
-      console.log(44, getServiceName(this.tracer, this.config, options))
       const span = this.tracer.startSpan('http.request', {
         childOf,
         tags: {
@@ -152,16 +165,18 @@ class HttpPlugin extends Plugin {
       }
 
       analyticsSampler.sample(span, this.config.measured)
-
+      // console.log(7777)
       this.enter(span, store)
     })
 
     this.addSub('apm:httpClient:request:end', () => {
       debugger;
+      if (this.config.client === false) return
       this.exit()
     })
 
     this.addSub('apm:httpClient:request:async-end', ([req, res]) => {
+      if (this.config.client === false) return
       const span = storage.getStore().span
       if (res) {
         span.setTag(HTTP_STATUS_CODE, res.statusCode)
@@ -183,6 +198,7 @@ class HttpPlugin extends Plugin {
     })
 
     this.addSub('apm:httpClient:request:error', ([error]) => {
+      if (this.config.client === false) return
       debugger;
       const span = storage.getStore().span
       span.addTags({

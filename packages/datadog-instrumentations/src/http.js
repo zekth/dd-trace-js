@@ -36,8 +36,12 @@ function patch (http, methodName) {
   
   function makeRequestTrace (request) {
     return function requestTrace () {
+      const asyncResource = new AsyncResource('bound-anonymous-fn')
       const store = storage.getStore()
+      
       if (store && store.noop) return request.apply(this, arguments)
+
+      console.log(101)
 
       let args
 
@@ -56,27 +60,36 @@ function patch (http, methodName) {
 
       let callback = args.callback
 
-      console.log(55, callback)
-      callback = AsyncResource.bind(callback)
+      if (callback) {
+        callback = asyncResource.bind(callback)
+      }
+      
       const options = args.options
       const req = AsyncResource.bind(request).call(this, options, callback)
       const emit = req.emit
-
+      // console.log(100, storage.getStore())
+      
       req.emit = function (eventName, arg) {
         switch (eventName) {
           case 'response': {
+            debugger;
             const res = arg
-
+            
             // console.log(res)
             // AsyncResource.bind(res)
             bindEmit(res)
 
-            res.on('end', () => asyncEndClientCh.publish([req, res]))
+            
+            res.on('end', AsyncResource.bind(() => {
+                debugger;
+                asyncEndClientCh.publish([req, res])
+              }
+            ))
 
             break
           }
           case 'error':
-            errorCh.publish(arg)
+            errorClientCh.publish([arg])
           case 'abort': // eslint-disable-line no-fallthrough
           case 'timeout': // eslint-disable-line no-fallthrough
             asyncEndClientCh.publish([req, null])
@@ -186,8 +199,11 @@ addHook({ name: 'https' }, http => {
 addHook({ name: 'http' }, http => {
   debugger;
   
-
+  // const store = storage.getStore()
+  // console.log(77, store)
   debugger;
+  // shimmer.wrap(config)
+
   patch.call(this, http, 'request')
   patch.call(this, http, 'get')
 
@@ -237,7 +253,7 @@ function wrapInstrumentation(startCh, asyncResource, asyncEndCh1, asyncEndCh2 , 
   
   startCh.publish([req, res, config])
   
-  if (!req._datadog.instrumented) {
+  if (req._datadog && !req._datadog.instrumented) {
     
     wrapEnd(req, asyncEndCh1, asyncEndCh2, endCh, errorCh)
     

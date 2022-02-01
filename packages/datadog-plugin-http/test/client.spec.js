@@ -27,11 +27,11 @@ describe('Plugin', () => {
         if (protocol === 'https') {
           process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
           // console.log(require('https'))
-          server = require('https').createServer({ key, cert }, app)
-          // server = proxyquire('https', {}).createServer({ key, cert }, app)
+          // server = require('https').createServer({ key, cert }, app)
+          server = proxyquire('https', {}).createServer({ key, cert }, app)
         } else {
-          server = require('http').createServer(app)
-          // server = proxyquire('http', {}).createServer(app)
+          // server = require('http').createServer(app)
+          server = proxyquire('http', {}).createServer(app)
         }
         server.listen(port, 'localhost', listener)
         return server
@@ -117,7 +117,7 @@ describe('Plugin', () => {
           })
         })
 
-        it.only('should support configuration as an URL object', done => {
+        it('should support configuration as an URL object', done => {
           debugger;
           const app = express()
           debugger;
@@ -461,15 +461,17 @@ describe('Plugin', () => {
         })
 
         it('should run the callback in the parent context', done => {
+          debugger;
           const app = express()
 
           app.get('/user', (req, res) => {
             res.status(200).send('OK')
           })
-
+          debugger;
           getPort().then(port => {
             appListener = server(app, port, () => {
               const req = http.request(`${protocol}://localhost:${port}/user`, res => {
+                debugger;
                 expect(tracer.scope().active()).to.be.null
                 done()
               })
@@ -480,19 +482,23 @@ describe('Plugin', () => {
         })
 
         it('should run the event listeners in the parent context', done => {
+          debugger;
           const app = express()
 
           app.get('/user', (req, res) => {
             res.status(200).send('OK')
           })
 
+          debugger;
           getPort().then(port => {
             appListener = server(app, port, () => {
               const req = http.request(`${protocol}://localhost:${port}/user`, res => {
+                debugger;
                 const span = tracer.scope().active()
 
                 res.on('data', () => {})
                 res.on('end', () => {
+                  debugger;
                   expect(tracer.scope().active()).to.equal(span)
                   done()
                 })
@@ -804,8 +810,10 @@ describe('Plugin', () => {
 
           return agent.load('http', config)
             .then(() => {
-              http = require(protocol)
-              express = require('express')
+              // http = require(protocol)
+              // express = require('express')
+              http = proxyquire(protocol, {})
+              express = proxyquire('express', {})
             })
         })
 
@@ -848,8 +856,10 @@ describe('Plugin', () => {
 
           return agent.load('http', config)
             .then(() => {
-              http = require(protocol)
-              express = require('express')
+              // http = require(protocol)
+              // express = require('express')
+              http = proxyquire(protocol, {})
+              express = proxyquire('express', {})
             })
         })
 
@@ -892,8 +902,10 @@ describe('Plugin', () => {
 
           return agent.load('http', config)
             .then(() => {
-              http = require(protocol)
-              express = require('express')
+              // http = require(protocol)
+              // express = require('express')
+              http = proxyquire(protocol, {})
+              express = proxyquire('express', {})
             })
         })
 
@@ -936,8 +948,10 @@ describe('Plugin', () => {
 
           return agent.load('http', config)
             .then(() => {
-              http = require(protocol)
-              express = require('express')
+              // http = require(protocol)
+              // express = require('express')
+              http = proxyquire(protocol, {})
+              express = proxyquire('express', {})
             })
         })
 
@@ -1016,8 +1030,10 @@ describe('Plugin', () => {
 
           return agent.load('http', config)
             .then(() => {
-              http = require(protocol)
-              express = require('express')
+              // http = require(protocol)
+              // express = require('express')
+              http = proxyquire(protocol, {})
+              express = proxyquire('express', {})
             })
         })
 
@@ -1062,8 +1078,10 @@ describe('Plugin', () => {
 
           return agent.load('http', config)
             .then(() => {
-              http = require(protocol)
-              express = require('express')
+              // http = require(protocol)
+              // express = require('express')
+              http = proxyquire(protocol, {})
+              express = proxyquire('express', {})
             })
         })
 
