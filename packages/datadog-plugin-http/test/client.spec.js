@@ -9,11 +9,12 @@ const { expect } = require('chai')
 const { storage } = require('../../datadog-core')
 const key = fs.readFileSync(path.join(__dirname, './ssl/test.key'))
 const cert = fs.readFileSync(path.join(__dirname, './ssl/test.crt'))
+const proxyquire = require('proxyquire').noPreserveCache()
 
 const HTTP_REQUEST_HEADERS = tags.HTTP_REQUEST_HEADERS
 const HTTP_RESPONSE_HEADERS = tags.HTTP_RESPONSE_HEADERS
 
-describe.skip('Plugin', () => {
+describe('Plugin', () => {
   let express
   let http
   let appListener
@@ -25,9 +26,12 @@ describe.skip('Plugin', () => {
         let server
         if (protocol === 'https') {
           process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+          // console.log(require('https'))
           server = require('https').createServer({ key, cert }, app)
+          // server = proxyquire('https', {}).createServer({ key, cert }, app)
         } else {
           server = require('http').createServer(app)
+          // server = proxyquire('http', {}).createServer(app)
         }
         server.listen(port, 'localhost', listener)
         return server
@@ -42,21 +46,23 @@ describe.skip('Plugin', () => {
         if (appListener) {
           appListener.close()
         }
-        return agent.close()
+        return agent.close({ ritmReset: false })
       })
 
       describe('without configuration', () => {
         beforeEach(() => {
           return agent.load('http', { server: false })
             .then(() => {
-              http = require(protocol)
-              express = require('express')
+              // http = require(protocol)
+              // express = require('express')
+              http = proxyquire(protocol, {})
+              express = proxyquire('express', {})
             })
         })
 
-        it('should do automatic instrumentation', done => {
+        it.only('should do automatic instrumentation', done => {
           const app = express()
-
+          debugger;
           app.get('/user', (req, res) => {
             res.status(200).send()
           })

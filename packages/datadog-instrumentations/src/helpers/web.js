@@ -9,6 +9,7 @@ const urlFilter = require('../../../dd-trace/src/plugins/util/urlfilter')
 
 
 exports.normalizeConfig = function normalizeConfig (config) {
+  debugger;
   config = config.client || config
 
   const validateStatus = getStatusValidator(config)

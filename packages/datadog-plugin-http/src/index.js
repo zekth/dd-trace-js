@@ -22,7 +22,7 @@ const HTTP_STATUS_CODE = tags.HTTP_STATUS_CODE
 const HTTP_ROUTE = tags.HTTP_ROUTE
 const HTTP_REQUEST_HEADERS = tags.HTTP_REQUEST_HEADERS
 const HTTP_RESPONSE_HEADERS = tags.HTTP_RESPONSE_HEADERS
-
+const urlFilter = require('../../dd-trace/src/plugins/util/urlfilter')
 const HTTP2_HEADER_AUTHORITY = ':authority'
 const HTTP2_HEADER_SCHEME = ':scheme'
 const HTTP2_HEADER_PATH = ':path'
@@ -114,11 +114,12 @@ class HttpPlugin extends Plugin {
       web.finish(req, res)
     })
 
-    this.addSub('apm:httpClient:request:start', ([args, config]) => {
+    this.addSub('apm:httpClient:request:start', ([args, http]) => {
       debugger;
       
       const store = storage.getStore()
-
+      
+      this.config = normalizeConfig(this.config)
       const options = args.options
       const agent = options.agent || options._defaultAgent || http.globalAgent
       const protocol = options.protocol || agent.protocol || 'http:'
@@ -132,11 +133,13 @@ class HttpPlugin extends Plugin {
       // const scope = tracer.scope()
       // const childOf = scope.active()
       const childOf = store ? store.span : store
+      
+      console.log(44, getServiceName(this.tracer, this.config, options))
       const span = this.tracer.startSpan('http.request', {
         childOf,
         tags: {
           [SPAN_KIND]: CLIENT,
-          'service.name': getServiceName(this.tracer, config, options),
+          'service.name': getServiceName(this.tracer, this.config, options),
           'resource.name': method,
           'span.type': 'http',
           'http.method': method,
@@ -144,13 +147,13 @@ class HttpPlugin extends Plugin {
         }
       })
 
-      if (!(hasAmazonSignature(options) || !config.propagationFilter(uri))) {
+      if (!(hasAmazonSignature(options) || !this.config.propagationFilter(uri))) {
         this.tracer.inject(span, HTTP_HEADERS, options.headers)
       }
 
       analyticsSampler.sample(span, this.config.measured)
 
-
+      this.enter(span, store)
     })
 
     this.addSub('apm:httpClient:request:end', () => {
@@ -158,23 +161,23 @@ class HttpPlugin extends Plugin {
       this.exit()
     })
 
-    this.addSub('apm:httpClient:request:async-end', ([req, res, config]) => {
+    this.addSub('apm:httpClient:request:async-end', ([req, res]) => {
       const span = storage.getStore().span
       if (res) {
         span.setTag(HTTP_STATUS_CODE, res.statusCode)
   
-        if (!config.validateStatus(res.statusCode)) {
+        if (!this.config.validateStatus(res.statusCode)) {
           span.setTag('error', 1)
         }
   
-        addResponseHeaders(res, span, config)
+        addResponseHeaders(res, span, this.config)
       } else {
         span.setTag('error', 1)
       }
   
-      addRequestHeaders(req, span, config)
+      addRequestHeaders(req, span, this.config)
   
-      config.hooks.request(span, req, res)
+      this.config.hooks.request(span, req, res)
   
       span.finish()
     })
@@ -275,6 +278,55 @@ function getHost (options) {
 
 function startsWith (searchString) {
   return value => String(value).startsWith(searchString)
+}
+
+function normalizeConfig (config) {
+  debugger;
+  config = config.client || config
+
+  const validateStatus = getStatusValidator(config)
+  const propagationFilter = getFilter({ blocklist: config.propagationBlocklist })
+  const headers = getHeaders(config)
+  const hooks = getHooks(config)
+
+  return Object.assign({}, config, {
+    validateStatus,
+    propagationFilter,
+    headers,
+    hooks
+  })
+}
+  
+function getStatusValidator (config) {
+  if (typeof config.validateStatus === 'function') {
+    return config.validateStatus
+  } else if (config.hasOwnProperty('validateStatus')) {
+    log.error('Expected `validateStatus` to be a function.')
+  }
+  return code => code < 400 || code >= 500
+}
+
+function getFilter (config) {
+  config = Object.assign({}, config, {
+    blocklist: config.blocklist || []
+  })
+
+  return urlFilter.getFilter(config)
+}
+
+function getHeaders (config) {
+  if (!Array.isArray(config.headers)) return []
+
+  return config.headers
+    .filter(key => typeof key === 'string')
+    .map(key => key.toLowerCase())
+}
+
+function getHooks (config) {
+  const noop = () => {}
+  const request = (config.hooks && config.hooks.request) || noop
+
+  return { request }
 }
 
 module.exports = HttpPlugin
