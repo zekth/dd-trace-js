@@ -19,12 +19,17 @@ const {
 const urlFilter = require('../../dd-trace/src/plugins/util/urlfilter')
 const log = require('../../dd-trace/src/log')
 
+const startCh = channel('apm:http:request:start')
+const asyncEndCh1 = channel('apm:http:request:async-end1')
+const asyncEndCh2 = channel('apm:http:request:async-end2')
+const endCh = channel('apm:http:request:end')
+const errorCh = channel('apm:http:request:error')
 
 function patch (http, methodName) {
-  const startCh = channel('apm:httpClient:request:start')
-  const asyncEndCh = channel('apm:httpClient:request:async-end')
-  const endCh = channel('apm:httpClient:request:end')
-  const errorCh = channel('apm:httpClient:request:error')
+  const startClientCh = channel('apm:httpClient:request:start')
+  const asyncEndClientCh = channel('apm:httpClient:request:async-end')
+  const endClientCh = channel('apm:httpClient:request:end')
+  const errorClientCh = channel('apm:httpClient:request:error')
   debugger;
   
   shimmer.wrap(http, methodName, fn => makeRequestTrace(fn))
@@ -47,10 +52,11 @@ function patch (http, methodName) {
         return request.apply(this, arguments)
       }
       debugger;
-      startCh.publish([args, http])
+      startClientCh.publish([args, http])
 
       let callback = args.callback
 
+      console.log(55, callback)
       callback = AsyncResource.bind(callback)
       const options = args.options
       const req = AsyncResource.bind(request).call(this, options, callback)
@@ -61,9 +67,11 @@ function patch (http, methodName) {
           case 'response': {
             const res = arg
 
-            AsyncResource.bind(res)
+            // console.log(res)
+            // AsyncResource.bind(res)
+            bindEmit(res)
 
-            res.on('end', () => asyncEndCh.publish([req, res]))
+            res.on('end', () => asyncEndClientCh.publish([req, res]))
 
             break
           }
@@ -71,23 +79,24 @@ function patch (http, methodName) {
             errorCh.publish(arg)
           case 'abort': // eslint-disable-line no-fallthrough
           case 'timeout': // eslint-disable-line no-fallthrough
-            asyncEndCh.publish([req, null])
+            asyncEndClientCh.publish([req, null])
         }
 
         try {
           return emit.apply(this, arguments)
         } catch(err) {
           err.stack // trigger getting the stack at the original throwing point
-          errorCh.publish(arg)
+          errorClientCh.publish(arg)
     
           throw err
         } finally {
-          endCh.publish(undefined)
+          endClientCh.publish(undefined)
         }
         
       }
 
-      AsyncResource.bind(req)
+      // AsyncResource.bind(req)
+      bindEmit(req)
 
       return req
     }
@@ -168,21 +177,31 @@ addHook({ name: 'https' }, http => {
   debugger;
   patch.call(this, http, 'request')
   patch.call(this, http, 'get')
+
+  shimmer.wrap(http.Server.prototype, 'emit', wrapEmit)
+
+  return http
 })
 
 addHook({ name: 'http' }, http => {
   debugger;
-  const startCh = channel('apm:http:request:start')
-  const asyncEndCh1 = channel('apm:http:request:async-end1')
-  const asyncEndCh2 = channel('apm:http:request:async-end2')
-  const endCh = channel('apm:http:request:end')
-  const errorCh = channel('apm:http:request:error')
+  
 
   debugger;
   patch.call(this, http, 'request')
   patch.call(this, http, 'get')
 
-  shimmer.wrap(http.Server.prototype, 'emit', (emit) => function (eventName, req, res) {
+  shimmer.wrap(http.Server.prototype, 'emit', wrapEmit)
+
+  if (http.ServerResponse) { // not present on https
+    bindEmit(http.ServerResponse.prototype)
+  }
+
+  return http
+})  
+
+function wrapEmit(emit) {
+  return function (eventName, req, res) {
     const asyncResource = new AsyncResource('bound-anonymous-fn')
     const config = web.web.normalizeConfig({})
     
@@ -211,14 +230,8 @@ addHook({ name: 'http' }, http => {
     }
     
     return emit.apply(this, arguments)
-  })
-
-  if (http.ServerResponse) { // not present on https
-    bindEmit(http.ServerResponse.prototype)
   }
-
-  return http
-})  
+}
 
 function wrapInstrumentation(startCh, asyncResource, asyncEndCh1, asyncEndCh2 , endCh, errorCh, req, res, config, callback) {
   

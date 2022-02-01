@@ -60,7 +60,7 @@ describe('Plugin', () => {
             })
         })
 
-        it.only('should do automatic instrumentation', done => {
+        it('should do automatic instrumentation', done => {
           const app = express()
           debugger;
           app.get('/user', (req, res) => {
@@ -117,9 +117,10 @@ describe('Plugin', () => {
           })
         })
 
-        it('should support configuration as an URL object', done => {
+        it.only('should support configuration as an URL object', done => {
+          debugger;
           const app = express()
-
+          debugger;
           app.get('/user', (req, res) => {
             res.status(200).send()
           })
